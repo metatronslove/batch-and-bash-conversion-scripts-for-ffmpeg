@@ -695,17 +695,9 @@ async function initFFmpeg() {
             progressText.textContent = 'FFmpeg çekirdek dosyaları yükleniyor...';
         }
 
-        // Progress olaylarını dinle
-        ffmpeg.setProgress(({ ratio }) => {
-            const progress = Math.round(ratio * 100);
-            console.log(`FFmpeg yükleme ilerlemesi: ${progress}%`);
-            
-            if (progressFill && progressText) {
-                progressFill.style.width = `${progress}%`;
-                progressText.textContent = `Yükleniyor: ${progress}%`;
-            }
-        });
-
+        // Yeni FFmpeg.js sürümlerinde progress event'i farklı çalışıyor
+        // Eski setProgress metodunu kaldırıyoruz
+        
         // Log olaylarını dinle (opsiyonel)
         ffmpeg.on('log', ({ message }) => {
             console.log('FFmpeg Log:', message);
