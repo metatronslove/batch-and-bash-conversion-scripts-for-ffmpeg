@@ -730,7 +730,7 @@ async function setToDB(key, value) {
     }
 }
 
-// Resume özellikli indirme fonksiyonu
+// Güncellenmiş downloadWithResume fonksiyonu
 async function downloadWithResume(url, totalSize, onProgress) {
     const CACHE_KEY = `wasm_${btoa(url)}`;
     
@@ -756,11 +756,14 @@ async function downloadWithResume(url, totalSize, onProgress) {
         const xhr = new XMLHttpRequest();
         xhr.open('GET', url, true);
         xhr.responseType = 'arraybuffer';
+        xhr.timeout = 60000; // 60 saniye timeout
         
         // Range header'ını ayarla (kaldığı yerden devam etmek için)
         if (startByte > 0) {
             xhr.setRequestHeader('Range', `bytes=${startByte}-`);
         }
+        
+        let lastSaveTime = 0;
         
         xhr.onprogress = (event) => {
             if (event.lengthComputable) {
@@ -770,18 +773,19 @@ async function downloadWithResume(url, totalSize, onProgress) {
                 console.log(`İndirme progress: ${loaded}/${totalSize} (${percentage}%)`);
                 onProgress(loaded, totalSize, percentage);
                 
-// İndirme sırasında cache'e kaydetme kısmını düzelt
-if (percentage % 5 === 0 || percentage === 100) {
-    // Sadece tamamlanmış veya belirli aralıklarda cache'e kaydet
-    const currentData = new Uint8Array(startByte + event.loaded);
-    if (existingData.length > 0) {
-        currentData.set(existingData);
-    }
-    if (xhr.response) {
-        currentData.set(new Uint8Array(xhr.response), startByte);
-    }
-    setToDB(CACHE_KEY, currentData);
-}
+                // Her 2 saniyede bir veya %5'te bir cache'e kaydet
+                const currentTime = Date.now();
+                if (currentTime - lastSaveTime > 2000 || percentage % 5 === 0) {
+                    if (xhr.response) {
+                        const currentData = new Uint8Array(startByte + event.loaded);
+                        if (existingData.length > 0) {
+                            currentData.set(existingData);
+                        }
+                        currentData.set(new Uint8Array(xhr.response), startByte);
+                        setToDB(CACHE_KEY, currentData);
+                        lastSaveTime = currentTime;
+                    }
+                }
             }
         };
         
@@ -799,8 +803,12 @@ if (percentage % 5 === 0 || percentage === 100) {
                 }
                 
                 // Tamamlanmış datayı cache'e kaydet
-                setToDB(CACHE_KEY, finalData);
-                resolve(finalData);
+                if (finalData.length === totalSize) {
+                    setToDB(CACHE_KEY, finalData);
+                    resolve(finalData);
+                } else {
+                    reject(new Error(`Eksik dosya: ${finalData.length} / ${totalSize} bytes`));
+                }
             } else {
                 reject(new Error(`İndirme hatası: ${xhr.status}`));
             }
@@ -808,6 +816,10 @@ if (percentage % 5 === 0 || percentage === 100) {
         
         xhr.onerror = () => {
             reject(new Error('İndirme başarısız'));
+        };
+        
+        xhr.ontimeout = () => {
+            reject(new Error('İndirme zaman aşımına uğradı'));
         };
         
         xhr.send();
@@ -858,21 +870,23 @@ async function initFFmpeg() {
             }
         );
 
+        // WASM boyutunu kontrol et
+        if (!wasmBuffer || wasmBuffer.length !== totalSize) {
+            throw new Error(`WASM dosyası eksik indirildi: ${wasmBuffer ? wasmBuffer.length : 0} / ${totalSize} bytes`);
+        }
+
         console.log('WASM indirme tamamlandı, FFmpeg başlatılıyor...');
         updateProgressBar(95, 'FFmpeg başlatılıyor...');
 
-        // WASM'ı blob URL'ye dönüştür ve hazır olduğundan emin ol
+        // WASM'ı blob URL'ye dönüştür
         const wasmBlob = new Blob([wasmBuffer], { type: 'application/wasm' });
         const wasmBlobUrl = URL.createObjectURL(wasmBlob);
         
-        // Blob URL'nin hazır olmasını bekle
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        console.log('WASM blob URL hazır:', wasmBlobUrl);
+        console.log('WASM blob URL hazır:', wasmBlobUrl.substring(0, 50) + '...');
 
-        // FFmpeg'i başlat - TÜM dosyalar hazır olduğunda
+        // FFmpeg'i başlat
         await ffmpeg.load({
-            coreURL: 'ffmpeg-core.js',
+            coreURL: 'ffmpeg/ffmpeg-core.js', // Yerel dosya yolunu kullan
             wasmURL: wasmBlobUrl
         });
         
@@ -885,9 +899,6 @@ async function initFFmpeg() {
         updateProgressBar(100, '✅ Hazır! Artık dönüşüm yapabilirsiniz.');
         
         showGlobalStatus('✅ FFmpeg başarıyla yüklendi! Artık dönüşüm yapabilirsiniz.', 'success');
-
-        // Cache'i temizleme - devam özelliği için cache'i koru
-        // await clearCache();
 
         // 3 saniye sonra progress bar'ı gizle
         setTimeout(() => {
@@ -908,6 +919,8 @@ async function initFFmpeg() {
                 errorMessage = 'Tarayıcınız gerekli özellikleri desteklemiyor. Lütfen Chrome, Edge veya Firefox\'un güncel sürümünü kullanın.';
             } else if (error.message.includes('404')) {
                 errorMessage = 'FFmpeg dosyaları bulunamadı. Lütfen internet bağlantınızı kontrol edin.';
+            } else if (error.message.includes('WASM dosyası eksik')) {
+                errorMessage = 'WASM dosyası tam indirilemedi. Lütfen internet bağlantınızı kontrol edip sayfayı yenileyin.';
             } else {
                 errorMessage += error.message;
             }
@@ -919,6 +932,7 @@ async function initFFmpeg() {
         disableAllButtons();
     }
 }
+
 // Cache temizleme fonksiyonu (isteğe bağlı)
 async function clearCache() {
     try {
