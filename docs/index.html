@@ -5,18 +5,18 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Video Converter - Tüm Dönüşüm Araçları</title>
 	<style>
-		:root {
-			--primary: #3b82f6;
-			--primary-dark: #2563eb;
-			--secondary: #64748b;
-			--success: #10b981;
-			--warning: #f59e0b;
-			--error: #ef4444;
-			--bg: #f8fafc;
-			--card: #ffffff;
-			--text: #1e293b;
-			--border: #e2e8f0;
-		}
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --secondary: #64748b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+        }
 
 		* {
 			margin: 0;
@@ -369,7 +369,7 @@
 		}
 	</style>	
 	<!-- FFmpeg.js CDN -->
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/ffmpeg/0.12.15/umd/ffmpeg.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.6/dist/umd/ffmpeg.min.js"></script>
 </head>
 <body>
 	<div class="container">
@@ -666,13 +666,14 @@ async function initFFmpeg() {
         const progressFill = document.getElementById('ffmpeg-progress-fill');
         const progressText = document.getElementById('ffmpeg-progress-text');
 
+        // FFmpeg kontrolü
         if (typeof FFmpeg === 'undefined') {
             throw new Error('FFmpeg kütüphanesi yüklenemedi.');
         }
 
-        console.log('FFmpeg bulundu:', FFmpeg);
+        console.log('FFmpeg bulundu');
         
-        const { createFFmpeg, fetchFile } = FFmpeg;
+        const { createFFmpeg } = FFmpeg;
         
         ffmpeg = createFFmpeg({
             log: true,
@@ -685,8 +686,8 @@ async function initFFmpeg() {
                     progressText.textContent = `Yükleniyor: ${progress}%`;
                 }
             },
-            corePath: 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/umd/ffmpeg-core.js',
-            wasmPath: 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/umd/ffmpeg-core.wasm'
+            corePath: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/ffmpeg-core.js',
+            wasmPath: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/ffmpeg-core.wasm'
         });
 
         console.log('FFmpeg.load() çağrılıyor...');
@@ -884,8 +885,8 @@ async function convertMP4ToMP3() {
             
             logMessage('mp4tomp3', `İşleniyor: ${file.name}`, 'info');
             
-            // Write file to FFmpeg file system - YENİ YÖNTEM
-            const fileData = await FFmpeg.fetchFile(file);
+            // Write file to FFmpeg file system
+            const fileData = new Uint8Array(await file.arrayBuffer());
             ffmpeg.FS('writeFile', 'input.mp4', fileData);
 
             // Run FFmpeg command
@@ -955,15 +956,15 @@ async function convertMP3ToMP4() {
             
             logMessage('mp3tomp4', `İşleniyor: ${audioFile.name}`, 'info');
             
-            // Write audio file to FFmpeg file system - YENİ YÖNTEM
-            const audioData = await FFmpeg.fetchFile(audioFile);
+            // Write audio file to FFmpeg file system
+            const audioData = new Uint8Array(await audioFile.arrayBuffer());
             ffmpeg.FS('writeFile', 'audio.mp3', audioData);
 
             let ffmpegCommand;
             
             if (imageFile) {
-                // Use provided image - YENİ YÖNTEM
-                const imageData = await FFmpeg.fetchFile(imageFile);
+                // Use provided image
+                const imageData = new Uint8Array(await imageFile.arrayBuffer());
                 const imageExt = imageFile.name.split('.').pop();
                 ffmpeg.FS('writeFile', `image.${imageExt}`, imageData);
                 
@@ -1058,8 +1059,8 @@ async function convertMOVToMP4() {
             
             logMessage('movtomp4', `İşleniyor: ${file.name}`, 'info');
             
-            // Write file to FFmpeg file system - YENİ YÖNTEM
-            const fileData = await FFmpeg.fetchFile(file);
+            // Write file to FFmpeg file system
+            const fileData = new Uint8Array(await file.arrayBuffer());
             ffmpeg.FS('writeFile', 'input.mov', fileData);
 
             // Run FFmpeg command
@@ -1136,8 +1137,8 @@ async function invertVideo() {
             
             logMessage('invertmp4', `İşleniyor: ${file.name}`, 'info');
             
-            // Write file to FFmpeg file system - YENİ YÖNTEM
-            const fileData = await FFmpeg.fetchFile(file);
+            // Write file to FFmpeg file system
+            const fileData = new Uint8Array(await file.arrayBuffer());
             ffmpeg.FS('writeFile', `input.${extension}`, fileData);
 
             // Reverse video and audio
@@ -1212,8 +1213,8 @@ async function flipVideo() {
             
             logMessage('flipmp4', `İşleniyor: ${file.name}`, 'info');
             
-            // Write file to FFmpeg file system - YENİ YÖNTEM
-            const fileData = await FFmpeg.fetchFile(file);
+            // Write file to FFmpeg file system
+            const fileData = new Uint8Array(await file.arrayBuffer());
             ffmpeg.FS('writeFile', `input.${extension}`, fileData);
 
             // Apply horizontal flip
@@ -1288,9 +1289,9 @@ async function convertMP3ToMP4WithImage() {
             
             logMessage('mp3tomp4j', `İşleniyor: ${audioFile.name}`, 'info');
             
-            // Write files to FFmpeg file system - YENİ YÖNTEM
-            const audioData = await FFmpeg.fetchFile(audioFile);
-            const imageData = await FFmpeg.fetchFile(imageFile);
+            // Write files to FFmpeg file system
+            const audioData = new Uint8Array(await audioFile.arrayBuffer());
+            const imageData = new Uint8Array(await imageFile.arrayBuffer());
             const imageExt = imageFile.name.split('.').pop();
             
             ffmpeg.FS('writeFile', 'audio.mp3', audioData);
@@ -1352,6 +1353,18 @@ document.addEventListener('DOMContentLoaded', () => {
     setupFileInputs();
     console.log('FFmpeg yüklemeye başlanıyor...');
     initFFmpeg();
+});
+
+// Sayfa yüklendikten sonra da FFmpeg'i kontrol et
+window.addEventListener('load', () => {
+    console.log('Sayfa tamamen yüklendi');
+    // FFmpeg hala yüklenmediyse, 3 saniye sonra tekrar dene
+    setTimeout(() => {
+        if (!isFFmpegLoaded && typeof FFmpeg !== 'undefined') {
+            console.log('FFmpeg mevcut ama init edilmemiş, tekrar deneniyor...');
+            initFFmpeg();
+        }
+    }, 3000);
 });
 	</script>
 </body>
