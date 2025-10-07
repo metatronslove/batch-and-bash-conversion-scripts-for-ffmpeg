@@ -668,7 +668,8 @@ async function initFFmpeg() {
 
         // Progress bar'ı başlat
         if (progressFill && progressText) {
-            progressFill.style.width = '5%';
+            progressFill.style.width = '0%';
+            progressFill.style.background = 'var(--primary)';
             progressText.textContent = 'FFmpeg başlatılıyor...';
         }
 
@@ -680,49 +681,115 @@ async function initFFmpeg() {
         const { FFmpeg } = FFmpegWASM;
         ffmpeg = new FFmpeg();
 
-        // Aşamalı progress gösterimi
-        const stages = [
-            { percent: 10, text: "FFmpeg çekirdeği yükleniyor..." },
-            { percent: 25, text: "Temel modüller hazırlanıyor..." },
-            { percent: 45, text: "WASM dosyası indiriliyor..." },
-            { percent: 70, text: "Video codec'leri yükleniyor..." },
-            { percent: 85, text: "Audio codec'leri yükleniyor..." },
-            { percent: 95, text: "Son hazırlıklar yapılıyor..." }
-        ];
+        console.log('FFmpeg instance oluşturuldu');
 
-        let currentStage = 0;
-        const stageInterval = setInterval(() => {
-            if (currentStage < stages.length) {
-                const stage = stages[currentStage];
-                if (progressFill && progressText) {
-                    progressFill.style.width = `${stage.percent}%`;
-                    progressText.textContent = stage.text;
-                }
-                currentStage++;
-            } else {
-                clearInterval(stageInterval);
+        // WASM dosyasını önce boyutunu öğrenerek indirelim
+        const wasmUrl = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm';
+        
+        // Önce dosya boyutunu alalım
+        let totalSize = 0;
+        try {
+            const headResponse = await fetch(wasmUrl, { method: 'HEAD' });
+            if (headResponse.ok) {
+                totalSize = parseInt(headResponse.headers.get('content-length') || '30000000', 10);
+                console.log('WASM dosya boyutu:', totalSize, 'bytes');
             }
-        }, 1500); // Her 1.5 saniyede bir aşama değiştir
+        } catch (e) {
+            console.warn('Dosya boyutu alınamadı, varsayılan değer kullanılıyor');
+            totalSize = 30000000; // 30MB varsayılan
+        }
 
-        console.log('FFmpeg.load() çağrılıyor...');
+        // Gerçek indirme progress'i
+        let loadedSize = 0;
         
-        await ffmpeg.load({
-            coreURL: 'ffmpeg-core.js',
-            wasmURL: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm'
+        // Manuel fallback (eğer indirme çok yavaşsa)
+        let lastProgressTime = Date.now();
+        let lastLoadedSize = 0;
+        
+        const progressInterval = setInterval(() => {
+            const now = Date.now();
+            // Eğer 10 saniyedir ilerleme yoksa, fallback mesaj göster
+            if (now - lastProgressTime > 10000 && loadedSize === lastLoadedSize) {
+                if (progressText) {
+                    const currentMB = (loadedSize / 1024 / 1024).toFixed(1);
+                    progressText.textContent = `İndirme yavaş... ${currentMB}MB indirildi`;
+                }
+            }
+            lastLoadedSize = loadedSize;
+        }, 1000);
+
+        // XMLHttpRequest ile indirme progress'ini takip et
+        const wasmBuffer = await new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', wasmUrl, true);
+            xhr.responseType = 'arraybuffer';
+            
+            xhr.onprogress = (event) => {
+                if (event.lengthComputable) {
+                    loadedSize = event.loaded;
+                    const percentage = totalSize > 0 ? Math.round((loadedSize / totalSize) * 100) : 0;
+                    
+                    if (progressFill && progressText) {
+                        progressFill.style.width = `${percentage}%`;
+                        
+                        const loadedMB = (loadedSize / 1024 / 1024).toFixed(1);
+                        const totalMB = (totalSize / 1024 / 1024).toFixed(1);
+                        
+                        if (percentage < 100) {
+                            progressText.textContent = `İndiriliyor: ${loadedMB}MB / ${totalMB}MB (%${percentage})`;
+                        } else {
+                            progressText.textContent = 'İndirme tamamlandı, başlatılıyor...';
+                        }
+                    }
+                    
+                    lastProgressTime = Date.now();
+                }
+            };
+            
+            xhr.onload = () => {
+                clearInterval(progressInterval);
+                if (xhr.status === 200) {
+                    resolve(xhr.response);
+                } else {
+                    reject(new Error(`WASM indirme hatası: ${xhr.status}`));
+                }
+            };
+            
+            xhr.onerror = () => {
+                clearInterval(progressInterval);
+                reject(new Error('WASM indirme başarısız'));
+            };
+            
+            xhr.send();
         });
-        
-        clearInterval(stageInterval);
+
+        console.log('WASM indirme tamamlandı, FFmpeg başlatılıyor...');
+
+        if (progressText) {
+            progressText.textContent = 'FFmpeg başlatılıyor...';
+        }
+
+        // FFmpeg'i başlat
+        await ffmpeg.load({
+            coreURL: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/ffmpeg-core.js',
+            // WASM'ı blob olarak kullan
+            wasmURL: URL.createObjectURL(new Blob([wasmBuffer]))
+        });
+
+        clearInterval(progressInterval);
         
         isFFmpegLoaded = true;
         console.log('FFmpeg başarıyla yüklendi!');
         
         if (progressFill && progressText) {
             progressFill.style.width = '100%';
+            progressFill.style.background = 'var(--success)';
             progressText.textContent = '✅ Hazır! Artık dönüşüm yapabilirsiniz.';
         }
         
         showGlobalStatus('✅ FFmpeg başarıyla yüklendi! Artık dönüşüm yapabilirsiniz.', 'success');
 
+        // 3 saniye sonra progress bar'ı gizle
         setTimeout(() => {
             const progressContainer = document.getElementById('ffmpeg-progress-container');
             if (progressContainer) {
@@ -742,8 +809,34 @@ async function initFFmpeg() {
             progressText.textContent = '❌ Yükleme hatası! Sayfayı yenileyin.';
         }
         
-        showGlobalStatus('FFmpeg yüklenirken hata: ' + error.message, 'error');
+        let errorMessage = 'FFmpeg yüklenirken hata: ';
+        if (error.message.includes('SIMD') || error.message.includes('CompileError')) {
+            errorMessage = 'Tarayıcınız gerekli özellikleri desteklemiyor. Lütfen Chrome, Edge veya Firefox\'un güncel sürümünü kullanın.';
+        } else {
+            errorMessage += error.message;
+        }
+        
+        showGlobalStatus(errorMessage, 'error');
+        
+        // Hata durumunda butonları devre dışı bırak
+        disableAllButtons();
     }
+}
+
+// Tüm butonları devre dışı bırakan fonksiyon
+function disableAllButtons() {
+    const buttons = [
+        'mp4tomp3Btn', 'mp3tomp4Btn', 'movtomp4Btn', 
+        'invertmp4Btn', 'flipmp4Btn', 'mp3tomp4jBtn'
+    ];
+    
+    buttons.forEach(btnId => {
+        const btn = document.getElementById(btnId);
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'FFmpeg Yüklenemedi';
+        }
+    });
 }
 
 function showGlobalStatus(message, type) {
