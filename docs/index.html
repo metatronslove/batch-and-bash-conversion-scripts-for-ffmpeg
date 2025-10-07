@@ -658,20 +658,28 @@ if (typeof self.SharedArrayBuffer === 'undefined') {
 let ffmpeg = null;
 let isFFmpegLoaded = false;
 
+// Progress bar güncelleme fonksiyonu
+function updateProgressBar(percentage, message = '') {
+    const progressFill = document.getElementById('ffmpeg-progress-fill');
+    const progressText = document.getElementById('ffmpeg-progress-text');
+    
+    if (progressFill) {
+        progressFill.style.width = `${percentage}%`;
+        console.log(`Progress bar güncellendi: ${percentage}%`);
+    }
+    
+    if (progressText && message) {
+        progressText.textContent = message;
+    }
+}
+
+// initFFmpeg fonksiyonunda progress güncellemelerini bu fonksiyonla yap
 async function initFFmpeg() {
     try {
-        showGlobalStatus('FFmpeg yükleniyor (30MB, bu biraz zaman alabilir)...', 'info');
+        showGlobalStatus('FFmpeg yükleniyor (31.7MB, bu biraz zaman alabilir)...', 'info');
         console.log('FFmpeg yüklenmeye başlıyor...');
 
-        const progressFill = document.getElementById('ffmpeg-progress-fill');
-        const progressText = document.getElementById('ffmpeg-progress-text');
-
-        // Progress bar'ı başlat
-        if (progressFill && progressText) {
-            progressFill.style.width = '0%';
-            progressFill.style.background = 'var(--primary)';
-            progressText.textContent = 'FFmpeg başlatılıyor...';
-        }
+        updateProgressBar(0, 'FFmpeg başlatılıyor...');
 
         // FFmpegWASM kontrolü
         if (typeof FFmpegWASM === 'undefined') {
@@ -683,40 +691,15 @@ async function initFFmpeg() {
 
         console.log('FFmpeg instance oluşturuldu');
 
-        // SIMD OLMADAN WASM dosyası - SADECE BU URL DEĞİŞTİ
-        const wasmUrl = 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/umd/ffmpeg-core.wasm';
+        // SIMD OLMADAN WASM dosyası
+        const wasmUrl = 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/ffmpeg-core.wasm';
         
         // Önce dosya boyutunu alalım
-        let totalSize = 0;
-        try {
-            const headResponse = await fetch(wasmUrl, { method: 'HEAD' });
-            if (headResponse.ok) {
-                totalSize = parseInt(headResponse.headers.get('content-length') || '31700000', 10);
-                console.log('WASM dosya boyutu:', totalSize, 'bytes');
-            }
-        } catch (e) {
-            console.warn('Dosya boyutu alınamadı, varsayılan değer kullanılıyor');
-            totalSize = 31700000; // 30MB varsayılan
-        }
+        let totalSize = 31700000; // 31.7MB sabit olarak ayarla
+        console.log('WASM dosya boyutu:', totalSize, 'bytes');
 
-        // Gerçek indirme progress'i
-        let loadedSize = 0;
-        
-        // Manuel fallback (eğer indirme çok yavaşsa)
-        let lastProgressTime = Date.now();
-        let lastLoadedSize = 0;
-        
-        const progressInterval = setInterval(() => {
-            const now = Date.now();
-            // Eğer 10 saniyedir ilerleme yoksa, fallback mesaj göster
-            if (now - lastProgressTime > 10000 && loadedSize === lastLoadedSize) {
-                if (progressText) {
-                    const currentMB = (loadedSize / 1024 / 1024).toFixed(1);
-                    progressText.textContent = `İndirme yavaş... ${currentMB}MB indirildi`;
-                }
-            }
-            lastLoadedSize = loadedSize;
-        }, 1000);
+        console.log('WASM indirmesi başlıyor...');
+        updateProgressBar(5, 'WASM indiriliyor...');
 
         // XMLHttpRequest ile indirme progress'ini takip et
         const wasmBuffer = await new Promise((resolve, reject) => {
@@ -726,29 +709,21 @@ async function initFFmpeg() {
             
             xhr.onprogress = (event) => {
                 if (event.lengthComputable) {
-                    loadedSize = event.loaded;
-                    const percentage = totalSize > 0 ? Math.round((loadedSize / totalSize) * 100) : 0;
+                    const loadedSize = event.loaded;
+                    const percentage = Math.min(95, Math.round((loadedSize / totalSize) * 100)); // Max 95%
                     
-                    if (progressFill && progressText) {
-                        progressFill.style.width = `${percentage}%`;
-                        
-                        const loadedMB = (loadedSize / 1024 / 1024).toFixed(1);
-                        const totalMB = (totalSize / 1024 / 1024).toFixed(1);
-                        
-                        if (percentage < 100) {
-                            progressText.textContent = `İndiriliyor: ${loadedMB}MB / ${totalMB}MB (%${percentage})`;
-                        } else {
-                            progressText.textContent = 'İndirme tamamlandı, başlatılıyor...';
-                        }
-                    }
+                    console.log(`İndirme progress: ${loadedSize}/${totalSize} (${percentage}%)`);
                     
-                    lastProgressTime = Date.now();
+                    const loadedMB = (loadedSize / 1024 / 1024).toFixed(1);
+                    const totalMB = (totalSize / 1024 / 1024).toFixed(1);
+                    updateProgressBar(percentage, `İndiriliyor: ${loadedMB}MB / ${totalMB}MB (%${percentage})`);
                 }
             };
             
             xhr.onload = () => {
-                clearInterval(progressInterval);
                 if (xhr.status === 200) {
+                    console.log('WASM indirme tamamlandı');
+                    updateProgressBar(95, 'FFmpeg başlatılıyor...');
                     resolve(xhr.response);
                 } else {
                     reject(new Error(`WASM indirme hatası: ${xhr.status}`));
@@ -756,7 +731,6 @@ async function initFFmpeg() {
             };
             
             xhr.onerror = () => {
-                clearInterval(progressInterval);
                 reject(new Error('WASM indirme başarısız'));
             };
             
@@ -765,27 +739,16 @@ async function initFFmpeg() {
 
         console.log('WASM indirme tamamlandı, FFmpeg başlatılıyor...');
 
-        if (progressText) {
-            progressText.textContent = 'FFmpeg başlatılıyor...';
-        }
-
         // FFmpeg'i başlat
         await ffmpeg.load({
-            coreURL: 'ffmpeg-core.js',
-            // WASM'ı blob olarak kullan
+            coreURL: 'ffmpeg/ffmpeg-core.js',
             wasmURL: URL.createObjectURL(new Blob([wasmBuffer]))
         });
-
-        clearInterval(progressInterval);
         
         isFFmpegLoaded = true;
         console.log('FFmpeg başarıyla yüklendi!');
         
-        if (progressFill && progressText) {
-            progressFill.style.width = '100%';
-            progressFill.style.background = 'var(--success)';
-            progressText.textContent = '✅ Hazır! Artık dönüşüm yapabilirsiniz.';
-        }
+        updateProgressBar(100, '✅ Hazır! Artık dönüşüm yapabilirsiniz.');
         
         showGlobalStatus('✅ FFmpeg başarıyla yüklendi! Artık dönüşüm yapabilirsiniz.', 'success');
 
@@ -800,14 +763,7 @@ async function initFFmpeg() {
     } catch (error) {
         console.error('FFmpeg yükleme hatası:', error);
         
-        const progressFill = document.getElementById('ffmpeg-progress-fill');
-        const progressText = document.getElementById('ffmpeg-progress-text');
-        
-        if (progressFill && progressText) {
-            progressFill.style.width = '100%';
-            progressFill.style.background = 'var(--error)';
-            progressText.textContent = '❌ Yükleme hatası! Sayfayı yenileyin.';
-        }
+        updateProgressBar(100, '❌ Yükleme hatası! Sayfayı yenileyin.');
         
         let errorMessage = 'FFmpeg yüklenirken hata: ';
         if (error && error.message) {
@@ -821,8 +777,6 @@ async function initFFmpeg() {
         }
         
         showGlobalStatus(errorMessage, 'error');
-        
-        // Hata durumunda butonları devre dışı bırak
         disableAllButtons();
     }
 }
