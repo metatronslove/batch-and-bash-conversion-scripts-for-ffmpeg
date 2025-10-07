@@ -657,6 +657,8 @@ if (typeof self.SharedArrayBuffer === 'undefined') {
 
 let ffmpeg = null;
 let isFFmpegLoaded = false;
+// Çift yüklenmeyi önle - global flag
+let ffmpegInitializationStarted = false;
 
 // Progress bar güncelleme fonksiyonu
 function updateProgressBar(percentage, message = '') {
@@ -826,28 +828,33 @@ async function downloadWithResume(url, totalSize, onProgress) {
     });
 }
 
-// Düzeltilmiş initFFmpeg fonksiyonu - SIMD olmadan çalışan core
+// Güncellenmiş initFFmpeg fonksiyonu
 async function initFFmpeg() {
     try {
-        showGlobalStatus('FFmpeg yükleniyor (SIMD olmadan)...', 'info');
+        showGlobalStatus('FFmpeg yükleniyor...', 'info');
         console.log('FFmpeg yüklenmeye başlıyor...');
 
         updateProgressBar(0, 'FFmpeg başlatılıyor...');
 
-        // FFmpegWASM kontrolü
-        if (typeof FFmpegWASM === 'undefined') {
-            throw new Error('FFmpegWASM kütüphanesi yüklenemedi.');
+        // FFmpeg kontrolü
+        if (typeof FFmpeg === 'undefined') {
+            throw new Error('FFmpeg kütüphanesi yüklenemedi.');
         }
 
-        const { FFmpeg } = FFmpegWASM;
+        // Yeni FFmpeg instance'ı oluştur
         ffmpeg = new FFmpeg();
+        
+        // Progress handler ekle
+        ffmpeg.on('progress', ({ progress }) => {
+            const percentage = Math.round(progress * 100);
+            updateProgressBar(percentage, `FFmpeg yükleniyor... ${percentage}%`);
+        });
 
         console.log('FFmpeg instance oluşturuldu');
 
-        updateProgressBar(30, 'SIMD olmayan core yükleniyor...');
+        updateProgressBar(30, 'Core bileşenleri yükleniyor...');
 
         // SIMD OLMADAN çalışan core URL'leri
-        // Aynı 0.12.4 sürümü ama SIMD olmadan derlenmiş
         const coreURL = 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/umd/ffmpeg-core.js';
         const wasmURL = 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/umd/ffmpeg-core.wasm';
 
@@ -856,10 +863,14 @@ async function initFFmpeg() {
 
         updateProgressBar(60, 'FFmpeg core başlatılıyor...');
 
-        // FFmpeg'i başlat
+        // FFmpeg'i başlat - SIMD olmadan
         await ffmpeg.load({
             coreURL: coreURL,
-            wasmURL: wasmURL
+            wasmURL: wasmURL,
+            // SIMD'yi devre dışı bırak
+            ffmpegOptions: {
+                simd: false
+            }
         });
         
         isFFmpegLoaded = true;
@@ -881,40 +892,29 @@ async function initFFmpeg() {
     } catch (error) {
         console.error('FFmpeg yükleme hatası:', error);
         
-        updateProgressBar(100, '❌ SIMD uyumsuzluğu!');
+        updateProgressBar(100, '❌ Yükleme başarısız!');
         
-        // Daha güvenli hata mesajı kontrolü
         let errorMessage = '';
         
         if (error && error.message) {
             const errorMsg = error.message.toString();
             
-            if (errorMsg.includes('SIMD') || errorMsg.includes('CompileError')) {
+            if (errorMsg.includes('SIMD')) {
                 errorMessage = `
                     <strong>🚫 SIMD Uyumsuzluğu Tespit Edildi</strong><br><br>
-                    
-                    <strong>Mevcut Durum:</strong><br>
-                    • WebAssembly: ✅ Destekleniyor<br>
-                    • SIMD: ❌ Desteklenmiyor (Ana sorun)<br>
-                    • SharedArrayBuffer: ✅ Destekleniyor<br><br>
                     
                     <strong>Çözüm Önerileri:</strong><br>
                     1. <strong>Chrome 91+</strong> kullanın (En iyi çözüm)<br>
                     2. <strong>Firefox 90+</strong> kullanın<br> 
                     3. <strong>Edge 91+</strong> kullanın<br><br>
                     
-                    <strong>Alternatif Çözüm:</strong><br>
-                    • SIMD gerektirmeyen eski bir FFmpeg sürümü kullanılabilir<br><br>
-                    
                     <em>Mevcut tarayıcı: ${navigator.userAgent.split(')')[0].split('(')[1]}</em>
                 `;
                 
-                // Alternatif sürüm öner
+                // Alternatif sürüm dene
                 showGlobalStatus('SIMD sorunu. Alternatif sürüm deneniyor...', 'warning');
-                setTimeout(() => initFFmpegAlternative(), 3000);
+                setTimeout(() => initFFmpegAlternative(), 2000);
                 
-            } else if (errorMsg.includes('404') || errorMsg.includes('NetworkError')) {
-                errorMessage = 'FFmpeg dosyaları indirilemedi. Lütfen internet bağlantınızı kontrol edin.';
             } else {
                 errorMessage = 'FFmpeg yüklenirken hata: ' + errorMsg;
             }
@@ -927,27 +927,33 @@ async function initFFmpeg() {
     }
 }
 
-// Alternatif FFmpeg sürümü - SIMD gerektirmeyen
+// Alternatif FFmpeg sürümü - Daha eski ve geniş uyumlu
 async function initFFmpegAlternative() {
     try {
         showGlobalStatus('Alternatif FFmpeg sürümü deneniyor...', 'info');
         updateProgressBar(50, 'Alternatif core yükleniyor...');
 
-        const { FFmpeg } = FFmpegWASM;
+        // Yeni FFmpeg instance'ı oluştur
         ffmpeg = new FFmpeg();
+        
+        // Progress handler ekle
+        ffmpeg.on('progress', ({ progress }) => {
+            const percentage = Math.round(progress * 100);
+            updateProgressBar(50 + (percentage / 2), `Alternatif core yükleniyor... ${percentage}%`);
+        });
 
-        // Daha eski, SIMD gerektirmeyen bir sürüm deneyelim
-        // 0.10.1 sürümü daha geniş tarayıcı uyumluluğuna sahip
+        // Daha eski, daha geniş uyumlu sürüm
         const altCoreURL = 'https://unpkg.com/@ffmpeg/core@0.10.0/dist/ffmpeg-core.js';
-        const altWorkerURL = 'https://unpkg.com/@ffmpeg/core@0.10.0/dist/ffmpeg-worker.js';
         const altWasmURL = 'https://unpkg.com/@ffmpeg/core@0.10.0/dist/ffmpeg-core.wasm';
 
         console.log('Alternatif core deneniyor:', altCoreURL);
         
         await ffmpeg.load({
             coreURL: altCoreURL,
-            workerURL: altWorkerURL,
-            wasmURL: altWasmURL
+            wasmURL: altWasmURL,
+            ffmpegOptions: {
+                simd: false
+            }
         });
         
         isFFmpegLoaded = true;
@@ -971,27 +977,22 @@ async function initFFmpegAlternative() {
         let finalErrorMessage = `
             <strong>❌ Tüm FFmpeg sürümleri başarısız oldu</strong><br><br>
             
-            <strong>Sebep:</strong> Tarayıcınız WebAssembly SIMD'yi desteklemiyor.<br><br>
+            <strong>Sebep:</strong> Tarayıcınız gerekli WebAssembly desteğine sahip değil.<br><br>
             
-            <strong>Kesin Çözüm:</strong><br>
-            • <strong>Chrome 91+</strong> indirin ve kullanın<br>
-            • Veya <strong>Firefox 90+</strong> kullanın<br>
-            • Veya <strong>Edge 91+</strong> kullanın<br><br>
+            <strong>Çözüm:</strong><br>
+            • <strong>Chrome 87+</strong> indirin ve kullanın<br>
+            • Veya <strong>Firefox 78+</strong> kullanın<br>
+            • Veya <strong>Edge 88+</strong> kullanın<br><br>
             
-            <em>Mevcut tarayıcı: ${navigator.userAgent.split(')')[0].split('(')[1]}</em><br>
-            <em>SIMD desteği: ❌ YOK</em>
+            <em>Mevcut tarayıcı: ${navigator.userAgent.split(')')[0].split('(')[1]}</em>
         `;
         
         showGlobalStatus(finalErrorMessage, 'error');
         disableAllButtons();
         
-        // Progress bar'ı da güncelle
         updateProgressBar(100, '❌ Tarayıcı değiştirmeniz gerekiyor');
     }
 }
-
-// Çift yüklenmeyi önle - global flag
-let ffmpegInitializationStarted = false;
 
 // Güncellenmiş başlatma fonksiyonu
 document.addEventListener('DOMContentLoaded', () => {
@@ -1708,49 +1709,22 @@ async function convertMP3ToMP4WithImage() {
     }
 }
 
-// Initialize application
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM yüklendi, bileşenler ayarlanıyor...');
-    setupTabs();
-    setupFileInputs();
-    
-    // FFmpeg'i biraz bekledikten sonra yükle
-    setTimeout(() => {
-        console.log('FFmpeg yüklemeye başlanıyor...');
-        initFFmpeg();
-    }, 1000);
-});
-
-// Güncellenmiş başlatma fonksiyonu
+// DOM yüklendiğinde sadece bir kere çalışsın
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM yüklendi, bileşenler ayarlanıyor...');
     
-    // Tarayıcı uyumluluğunu göster
-    showBrowserCompatibility();
+    if (ffmpegInitializationStarted) {
+        console.log('FFmpeg zaten yüklenmeye başladı, tekrar başlatılmıyor.');
+        return;
+    }
+    
+    ffmpegInitializationStarted = true;
     
     setupTabs();
     setupFileInputs();
     
-    // FFmpeg'i hemen yükle
     console.log('FFmpeg yüklemeye başlanıyor...');
     initFFmpeg();
-});
-
-// Çift yüklenmeyi önle
-let initializationStarted = false;
-
-// Sayfa yüklendikten sonra kontrol et - sadece bir kere
-window.addEventListener('load', () => {
-    console.log('Sayfa tamamen yüklendi');
-    
-    // Eğer FFmpeg hala yüklenmediyse ve 3 saniye beklediysek
-    setTimeout(() => {
-        if (!isFFmpegLoaded && !ffmpegInitializationStarted && typeof FFmpegWASM !== 'undefined') {
-            console.log('FFmpeg zaman aşımı sonrası tekrar deneniyor...');
-            ffmpegInitializationStarted = true;
-            initFFmpeg();
-        }
-    }, 3000);
 });
 	</script>
 </body>
