@@ -637,19 +637,7 @@ async function initFFmpeg() {
         showGlobalStatus('FFmpeg yükleniyor, lütfen bekleyin...', 'info');
 
         let createFFmpegCoreFunction;
-
-        // KONTROL 1: createFFmpegCore fonksiyonunu doğrudan globalde ara (En Olması Gereken)
-        if (typeof window.createFFmpegCore === 'function') {
-            createFFmpegCoreFunction = window.createFFmpegCore;
-        } 
-        // KONTROL 2: Veya createFFmpeg adıyla globalde ara (Önceki Denemelerden Kalan Eski Versiyon Adı)
-        else if (typeof window.createFFmpeg === 'function') {
-            createFFmpegCoreFunction = window.createFFmpeg;
-        } 
-        else {
-            // Eğer fonksiyon bulunamazsa, HTML'deki dosya yüklenmemiştir.
-            throw new Error('FFmpeg başlatma fonksiyonu (createFFmpegCore veya createFFmpeg) bulunamadı. Lütfen HTML dosyanızı kontrol edin.'); 
-        }
+        createFFmpegCoreFunction = window.createFFmpegCore;
 
         // KÜTÜPHANENİN ÇEKİRDEK DOSYALARINI BULACAĞI TEMEL DİZİNİ TANIMLA
         // GitHub Pages alt dizin yolunuzu kullanmaya devam ediyoruz.
