@@ -666,7 +666,7 @@ async function initFFmpeg() {
         const progressFill = document.getElementById('ffmpeg-progress-fill');
         const progressText = document.getElementById('ffmpeg-progress-text');
 
-        // ESKİ API - FFmpegWASM kullan
+        // FFmpegWASM kontrolü
         if (typeof FFmpegWASM === 'undefined') {
             throw new Error('FFmpegWASM kütüphanesi yüklenemedi.');
         }
@@ -678,26 +678,15 @@ async function initFFmpeg() {
         // ESKİ API - new FFmpeg() kullan
         ffmpeg = new FFmpeg();
         
-        console.log('FFmpeg instance oluşturuldu:', ffmpeg);
+        console.log('FFmpeg instance oluşturuldu');
 
         if (progressText) {
             progressText.textContent = 'FFmpeg çekirdek dosyaları yükleniyor...';
         }
 
-        // ESKİ API - setProgress kullan
-        ffmpeg.setProgress(({ ratio }) => {
-            const progress = Math.round(ratio * 100);
-            console.log(`FFmpeg yükleme ilerlemesi: ${progress}%`);
-            
-            if (progressFill && progressText) {
-                progressFill.style.width = `${progress}%`;
-                progressText.textContent = `Yükleniyor: ${progress}%`;
-            }
-        });
-
+        // setProgress YOK - direkt load et
         console.log('FFmpeg.load() çağrılıyor...');
         
-        // ESKİ API - load fonksiyonu
         await ffmpeg.load({
             coreURL: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js',
             wasmURL: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm'
