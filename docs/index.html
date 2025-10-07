@@ -669,40 +669,72 @@ async function initFFmpeg() {
         const progressFill = document.getElementById('ffmpeg-progress-fill');
         const progressText = document.getElementById('ffmpeg-progress-text');
 
-        // FFmpegWASM'in yüklenmesini daha uzun süre ve daha esnek şekilde bekle
-        let attempts = 0;
-        const maxAttempts = 30; // 15 saniye
+        // Tüm olası global FFmpeg değişkenlerini kontrol et
+        let ffmpegModule = null;
+        let createFFmpeg = null;
         
-        while (typeof window.FFmpegWASM === 'undefined' && attempts < maxAttempts) {
-            await new Promise(resolve => setTimeout(resolve, 500));
-            attempts++;
-            console.log(`FFmpegWASM bekleniyor... (${attempts}/${maxAttempts})`);
+        // Olası global değişken isimlerini kontrol et
+        const possibleGlobals = [
+            'FFmpegWASM',
+            'FFmpeg',
+            'ffmpeg',
+            'ffmpegWASM',
+            'FFmpegJS',
+            'ffmpeg_js',
+            'FFMPEG'
+        ];
+        
+        console.log('Mevcut global değişkenleri ara:', possibleGlobals);
+        
+        for (const globalName of possibleGlobals) {
+            if (window[globalName] && window[globalName].createFFmpeg) {
+                console.log(`✅ FFmpeg bulundu: window.${globalName}`);
+                ffmpegModule = window[globalName];
+                createFFmpeg = window[globalName].createFFmpeg;
+                break;
+            }
+        }
+        
+        // Eğer hala bulunamadıysa, tüm global değişkenleri listele
+        if (!createFFmpeg) {
+            console.log('Tüm global değişkenler:', Object.keys(window).filter(key => 
+                typeof window[key] === 'object' && window[key] !== null
+            ));
             
-            if (progressText) {
-                progressText.textContent = `Script yükleniyor... (${attempts}/30)`;
+            // Özellikle ffmpeg ile başlayan değişkenleri ara
+            const ffmpegKeys = Object.keys(window).filter(key => 
+                key.toLowerCase().includes('ffmpeg')
+            );
+            console.log('FFmpeg ile ilgili global değişkenler:', ffmpegKeys);
+            
+            for (const key of ffmpegKeys) {
+                if (window[key] && window[key].createFFmpeg) {
+                    console.log(`✅ FFmpeg bulundu: window.${key}`);
+                    ffmpegModule = window[key];
+                    createFFmpeg = window[key].createFFmpeg;
+                    break;
+                }
             }
         }
 
-        if (typeof window.FFmpegWASM === 'undefined') {
-            throw new Error('FFmpeg scripti yüklenemedi. İnternet bağlantınızı kontrol edin ve sayfayı yenileyin.');
+        if (!createFFmpeg) {
+            throw new Error('FFmpeg kütüphanesi bulunamadı. CDN linki çalışmıyor olabilir.');
         }
-
-        if (typeof window.FFmpegWASM.createFFmpeg !== 'function') {
-            throw new Error('FFmpeg createFFmpeg fonksiyonu bulunamadı.');
-        }
-
-        const createFFmpeg = window.FFmpegWASM.createFFmpeg;
 
         if (progressText) {
             progressText.textContent = 'FFmpeg çekirdek dosyaları yükleniyor...';
         }
 
+        console.log('FFmpeg instance oluşturuluyor...');
+        
         // FFmpeg örneğini oluştur
         ffmpeg = createFFmpeg({ 
-            log: false, // Log'u kapatarak performansı artır
+            log: true, // Debug için açık tut
             coreURL: corePath + 'ffmpeg-core.js', 
             wasmURL: corePath + 'ffmpeg-core.wasm',
         });
+
+        console.log('FFmpeg instance oluşturuldu, load() çağrılıyor...');
 
         // Progress olaylarını dinle
         ffmpeg.setProgress(({ ratio }) => {
@@ -720,8 +752,7 @@ async function initFFmpeg() {
             }
         });
 
-        // FFmpeg'i yükle (daha uzun timeout ile)
-        console.log('FFmpeg.load() çağrılıyor...');
+        // FFmpeg'i yükle
         await ffmpeg.load();
         
         isFFmpegLoaded = true;
