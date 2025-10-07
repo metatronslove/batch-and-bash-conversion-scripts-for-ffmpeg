@@ -590,7 +590,7 @@
                 const { createFFmpeg } = FFmpeg;
                 ffmpeg = createFFmpeg({ 
                     log: true,
-                    corePath: 'https://unpkg.com/@ffmpeg/[email protected]/dist/ffmpeg-core.js',
+                    corePath: 'https://unpkg.com/@ffmpeg/ffmpeg@0.12.15/dist/ffmpeg-core.js',
                     progress: ({ ratio }) => {
                         const progress = Math.round(ratio * 100);
                         updateProgressBars(progress);
