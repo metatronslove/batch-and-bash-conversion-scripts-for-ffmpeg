@@ -683,20 +683,20 @@ async function initFFmpeg() {
 
         console.log('FFmpeg instance oluşturuldu');
 
-        // WASM dosyasını önce boyutunu öğrenerek indirelim
-        const wasmUrl = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm';
+        // SIMD OLMADAN WASM dosyası - SADECE BU URL DEĞİŞTİ
+        const wasmUrl = 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/umd/ffmpeg-core.wasm';
         
         // Önce dosya boyutunu alalım
         let totalSize = 0;
         try {
             const headResponse = await fetch(wasmUrl, { method: 'HEAD' });
             if (headResponse.ok) {
-                totalSize = parseInt(headResponse.headers.get('content-length') || '30000000', 10);
+                totalSize = parseInt(headResponse.headers.get('content-length') || '31700000', 10);
                 console.log('WASM dosya boyutu:', totalSize, 'bytes');
             }
         } catch (e) {
             console.warn('Dosya boyutu alınamadı, varsayılan değer kullanılıyor');
-            totalSize = 30000000; // 30MB varsayılan
+            totalSize = 31700000; // 30MB varsayılan
         }
 
         // Gerçek indirme progress'i
@@ -809,7 +809,6 @@ async function initFFmpeg() {
             progressText.textContent = '❌ Yükleme hatası! Sayfayı yenileyin.';
         }
         
-        // SADECE BU KISMI DÜZELTTİM - error kontrolü eklendi
         let errorMessage = 'FFmpeg yüklenirken hata: ';
         if (error && error.message) {
             if (error.message.includes('SIMD') || error.message.includes('CompileError')) {
