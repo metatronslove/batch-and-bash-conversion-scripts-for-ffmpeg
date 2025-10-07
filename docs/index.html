@@ -827,10 +827,9 @@ async function downloadWithResume(url, totalSize, onProgress) {
 }
 
 // Güncellenmiş initFFmpeg fonksiyonu
-// Güncellenmiş initFFmpeg fonksiyonu - Aynı sürümle SIMD olmadan
 async function initFFmpeg() {
     try {
-        showGlobalStatus('FFmpeg yükleniyor (31.7MB, bu biraz zaman alabilir)...', 'info');
+        showGlobalStatus('FFmpeg yükleniyor...', 'info');
         console.log('FFmpeg yüklenmeye başlıyor...');
 
         updateProgressBar(0, 'FFmpeg başlatılıyor...');
@@ -845,52 +844,22 @@ async function initFFmpeg() {
 
         console.log('FFmpeg instance oluşturuldu');
 
-        // Aynı URL'yi kullanıyoruz ama SIMD olmadan yüklemeye zorluyoruz
-        const wasmUrl = 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/umd/ffmpeg-core.wasm';
-        const totalSize = 31739621;
-        
-        console.log('WASM indirmesi başlıyor...');
-        updateProgressBar(5, 'WASM indiriliyor...');
+        updateProgressBar(10, 'Core dosyaları hazırlanıyor...');
 
-        const wasmBuffer = await downloadWithResume(
-            wasmUrl, 
-            totalSize,
-            (loaded, total, percentage) => {
-                const loadedMB = (loaded / 1024 / 1024).toFixed(1);
-                const totalMB = (total / 1024 / 1024).toFixed(1);
-                let message = `İndiriliyor: ${loadedMB}MB / ${totalMB}MB (%${percentage})`;
-                updateProgressBar(Math.min(95, percentage), message);
-            }
-        );
-
-        if (!wasmBuffer || wasmBuffer.length !== totalSize) {
-            throw new Error(`WASM dosyası eksik indirildi: ${wasmBuffer ? wasmBuffer.length : 0} / ${totalSize} bytes`);
-        }
-
-        console.log('WASM indirme tamamlandı, FFmpeg başlatılıyor...');
-        updateProgressBar(95, 'FFmpeg başlatılıyor...');
-
-        const wasmBlob = new Blob([wasmBuffer], { type: 'application/wasm' });
-        const wasmBlobUrl = URL.createObjectURL(wasmBlob);
-        
-        console.log('WASM blob URL hazır');
-
-        // ÖNEMLİ: SIMD özelliğini devre dışı bırak
-        // FFmpeg'i özel konfigürasyonla yükle
+        // Doğrudan CDN linklerini kullan - en basit yöntem
         await ffmpeg.load({
             coreURL: 'ffmpeg-core.js',
-            wasmURL: wasmBlobUrl,
-            // SIMD'i devre dışı bırakmak için
-            noSimd: true
+            wasmURL: 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/umd/ffmpeg-core.wasm'
         });
-        
-        URL.revokeObjectURL(wasmBlobUrl);
         
         isFFmpegLoaded = true;
         console.log('FFmpeg başarıyla yüklendi!');
         
         updateProgressBar(100, '✅ Hazır! Artık dönüşüm yapabilirsiniz.');
         showGlobalStatus('✅ FFmpeg başarıyla yüklendi! Artık dönüşüm yapabilirsiniz.', 'success');
+
+        // Butonları etkinleştir
+        enableAllButtons();
 
         setTimeout(() => {
             const progressContainer = document.getElementById('ffmpeg-progress-container');
@@ -904,17 +873,22 @@ async function initFFmpeg() {
         
         updateProgressBar(100, '❌ Yükleme hatası!');
         
-        let errorMessage = 'FFmpeg yüklenirken hata: ';
-        if (error && error.message) {
-            if (error.message.includes('SIMD') || error.message.includes('CompileError')) {
-                errorMessage = 'SIMD hatası. Alternatif çözüm deneniyor...';
-                // Alternatif yöntem dene
-                setTimeout(() => initFFmpegAlternative(), 2000);
-                showGlobalStatus('SIMD hatası, alternatif yöntem deneniyor...', 'warning');
-                return;
-            } else {
-                errorMessage += error.message;
-            }
+        // Daha net hata mesajı
+        let errorMessage = 'FFmpeg yüklenirken hata oluştu: ';
+        
+        if (error.message.includes('SIMD') || error.message.includes('CompileError')) {
+            errorMessage = `
+                <strong>WebAssembly SIMD Desteklenmiyor</strong><br><br>
+                Tarayıcınız gerekli WebAssembly SIMD özelliğini desteklemiyor.<br><br>
+                <strong>Çözüm önerileri:</strong><br>
+                • Chrome, Edge veya Firefox'un güncel sürümünü kullanın<br>
+                • Tarayıcı ayarlarında WebAssembly'yi etkinleştirin<br>
+                • Farklı bir tarayıcı deneyin
+            `;
+        } else if (error.message.includes('404') || error.message.includes('NetworkError')) {
+            errorMessage = 'FFmpeg dosyaları indirilemedi. Lütfen internet bağlantınızı kontrol edin.';
+        } else {
+            errorMessage += error.message;
         }
         
         showGlobalStatus(errorMessage, 'error');
@@ -922,40 +896,48 @@ async function initFFmpeg() {
     }
 }
 
-// Alternatif FFmpeg yükleme yöntemi
-async function initFFmpegAlternative() {
-    try {
-        showGlobalStatus('Alternatif FFmpeg yükleniyor...', 'info');
-        updateProgressBar(50, 'Alternatif yöntem deneniyor...');
-
-        // Daha basit bir FFmpeg instance'ı oluştur
-        const { FFmpeg } = FFmpegWASM;
-        ffmpeg = new FFmpeg();
-        
-        // Minimal konfigürasyon
-        await ffmpeg.load({
-            coreURL: 'ffmpeg-core.js',
-            wasmURL: 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/umd/ffmpeg-core.wasm'
-        });
-        
-        isFFmpegLoaded = true;
-        console.log('FFmpeg alternatif yöntemle yüklendi!');
-        
-        updateProgressBar(100, '✅ Hazır! Artık dönüşüm yapabilirsiniz.');
-        showGlobalStatus('✅ FFmpeg başarıyla yüklendi! Artık dönüşüm yapabilirsiniz.', 'success');
-
-        setTimeout(() => {
-            const progressContainer = document.getElementById('ffmpeg-progress-container');
-            if (progressContainer) {
-                progressContainer.style.display = 'none';
+// Butonları etkinleştirme fonksiyonu
+function enableAllButtons() {
+    const buttons = [
+        'mp4tomp3Btn', 'mp3tomp4Btn', 'movtomp4Btn', 
+        'invertmp4Btn', 'flipmp4Btn', 'mp3tomp4jBtn'
+    ];
+    
+    buttons.forEach(btnId => {
+        const btn = document.getElementById(btnId);
+        if (btn) {
+            btn.disabled = false;
+            // Buton metinlerini orijinal hallerine döndür
+            switch(btnId) {
+                case 'mp4tomp3Btn': btn.textContent = 'MP3\'e Dönüştür'; break;
+                case 'mp3tomp4Btn': btn.textContent = 'MP4\'e Dönüştür'; break;
+                case 'movtomp4Btn': btn.textContent = 'MP4\'e Dönüştür'; break;
+                case 'invertmp4Btn': btn.textContent = 'Ters Çevir'; break;
+                case 'flipmp4Btn': btn.textContent = 'Ayna Efekti Uygula'; break;
+                case 'mp3tomp4jBtn': btn.textContent = 'MP4\'e Dönüştür'; break;
             }
-        }, 3000);
-        
-    } catch (error) {
-        console.error('Alternatif FFmpeg yükleme hatası:', error);
-        showGlobalStatus('❌ FFmpeg yüklenemedi. Lütfen Chrome, Edge veya Firefox kullanın.', 'error');
-        disableAllButtons();
+        }
+    });
+}
+
+// Tarayıcı desteğini kontrol et
+function checkBrowserSupport() {
+    const features = {
+        wasm: typeof WebAssembly !== 'undefined',
+        simd: false,
+        sharedArrayBuffer: typeof SharedArrayBuffer !== 'undefined'
+    };
+    
+    // SIMD desteğini kontrol et
+    try {
+        features.simd = WebAssembly.validate(new Uint8Array([
+            0,97,115,109,1,0,0,0,1,5,1,96,0,1,123,3,2,1,0,10,10,1,8,0,65,0,253,15,253,98,11
+        ]));
+    } catch (e) {
+        features.simd = false;
     }
+    
+    return features;
 }
 
 // Cache temizleme fonksiyonu (isteğe bağlı)
@@ -1606,15 +1588,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 1000);
 });
 
-// Sayfa yüklendikten sonra da FFmpeg'i kontrol et
-window.addEventListener('load', () => {
-    console.log('Sayfa tamamen yüklendi');
-    setTimeout(() => {
-        if (!isFFmpegLoaded && typeof window.FFmpeg !== 'undefined') {
-            console.log('FFmpeg mevcut ama init edilmemiş, tekrar deneniyor...');
-            initFFmpeg();
-        }
-    }, 3000);
+// Güncellenmiş başlatma fonksiyonu
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM yüklendi, bileşenler ayarlanıyor...');
+    
+    // Tarayıcı desteğini kontrol et
+    const browserSupport = checkBrowserSupport();
+    console.log('Tarayıcı desteği:', browserSupport);
+    
+    if (!browserSupport.wasm) {
+        showGlobalStatus('❌ Tarayıcınız WebAssembly desteklemiyor. Lütfen güncel bir tarayıcı kullanın.', 'error');
+        disableAllButtons();
+        return;
+    }
+    
+    setupTabs();
+    setupFileInputs();
+    
+    // FFmpeg'i hemen yükle
+    console.log('FFmpeg yüklemeye başlanıyor...');
+    initFFmpeg();
 });
 	</script>
 </body>
