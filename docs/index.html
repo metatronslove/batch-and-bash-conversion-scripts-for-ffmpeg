@@ -636,16 +636,17 @@ async function initFFmpeg() {
     try {
         showGlobalStatus('FFmpeg yükleniyor, lütfen bekleyin...', 'info');
 
-        // Yeni Kontrol: FFmpegWASM nesnesini ve içindeki FFmpeg sınıfını kontrol et.
+        // Kütüphaneden gelen FFmpegWASM objesini kontrol et.
+        // Bu, sizin yüklediğiniz ffmpeg.js dosyasından geliyor.
         if (typeof window.FFmpegWASM === 'undefined' || typeof window.FFmpegWASM.FFmpeg === 'undefined') {
-            // Eğer hala bu hatayı alıyorsanız, HTML'deki CDN adresi kesinlikle bozuktur!
-            throw new Error('FFmpeg kütüphanesi (FFmpegWASM) bulunamadı. Lütfen CDN adresini kontrol edin.'); 
+            // Eğer hala bu hatayı alıyorsanız, HTML'deki <script> etiketiniz doğru dosyayı yüklemiyordur!
+            throw new Error('FFmpeg kütüphanesi (FFmpegWASM) bulunamadı. Lütfen HTML dosyanızı kontrol edin.'); 
         }
 
-        // Kütüphanenin beklediği gibi, FFmpegWASM.FFmpeg sınıfından yeni bir nesne oluşturulur (Constructor Call).
+        // Doğru Yapı: FFmpegWASM.FFmpeg sınıfından yeni bir nesne oluşturulur (Constructor Call).
         ffmpeg = new window.FFmpegWASM.FFmpeg({
             log: true,
-            // corePath: Bu adresin, yukarıdaki kütüphane sürümüyle uyumlu olması gerekir.
+            // Sizin orijinal corePath adresinizi koruyoruz
             corePath: 'https://metatronslove.github.io/batch-and-bash-conversion-scripts-for-ffmpeg/js/ffmpeg-core.js', 
             progress: ({ ratio }) => {
                 const progress = Math.round(ratio * 100);
@@ -665,6 +666,7 @@ async function initFFmpeg() {
         showGlobalStatus('FFmpeg yüklenirken hata oluştu: ' + error.message, 'error');
     }
 }
+
         function updateProgressBars(progress) {
             console.log('Progress:', progress + '%');
             const progressFills = document.querySelectorAll('.progress-fill');
