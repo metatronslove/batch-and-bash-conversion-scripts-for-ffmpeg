@@ -634,15 +634,12 @@
 
 	<div class="global-status" id="globalStatus"></div>
 	<script>
-		if (typeof self.SharedArrayBuffer === 'undefined') {
-			self.SharedArrayBuffer = ArrayBuffer; 
-		}
-		
 let ffmpeg; 
 let isFFmpegLoaded = false; 
 
 // Core dosyalarınızın bulunduğu alt dizin yolu:
 const basePath = 'https://metatronslove.github.io/batch-and-bash-conversion-scripts-for-ffmpeg/ffmpeg-0.11.0/core/';
+
 
 async function initFFmpeg() {
     try {
@@ -655,13 +652,12 @@ async function initFFmpeg() {
         
         const createFFmpeg = window.FFmpeg.createFFmpeg;
 
-        // 2. FFmpeg örneğini oluştururken SADECE tek çekirdek dosyalarını kullan!
+        // 2. FFmpeg örneğini oluştururken SADECE single-threaded dosyaların yollarını kullan!
         ffmpeg = createFFmpeg({ 
             log: true,
-            // 🛑 ÇÖZÜM: workerURL ve mainName parametreleri KALDIRILDI.
-            // SADECE coreURL ve wasmURL kalmalıdır.
-            coreURL: basePath + 'ffmpeg-core.js', // (Artık single-threaded olmalı)
-            wasmURL: basePath + 'ffmpeg-core.wasm', // (Artık single-threaded olmalı)
+            // 🛑 ÇÖZÜM: workerURL parametresi KALDIRILDI. Single-threaded mod devreye girer.
+            coreURL: basePath + 'ffmpeg-core.js', 
+            wasmURL: basePath + 'ffmpeg-core.wasm', 
         });
 
         // Progress ve Log Olaylarını Dinle
