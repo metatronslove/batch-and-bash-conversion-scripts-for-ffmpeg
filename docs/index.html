@@ -629,34 +629,40 @@
 
     <div class="global-status" id="globalStatus"></div>
     <script>
-let ffmpeg; // Globalde tanımlı olmalı
-let isFFmpegLoaded = false; // Globalde tanımlı olmalı
+let ffmpeg; 
+let isFFmpegLoaded = false; 
 
 async function initFFmpeg() {
     try {
         showGlobalStatus('FFmpeg yükleniyor, lütfen bekleyin...', 'info');
 
-        let createFFmpegCoreFunction;
-        createFFmpegCoreFunction = window.createFFmpegCore;
+        // KONTROL: Globalde FFmpegWASM objesinin varlığını kontrol et.
+        if (typeof window.FFmpegWASM === 'undefined') {
+            throw new Error('FFmpeg kütüphanesi (FFmpegWASM) bulunamadı. Lütfen HTML dosyanızı kontrol edin.'); 
+        }
 
-        // KÜTÜPHANENİN ÇEKİRDEK DOSYALARINI BULACAĞI TEMEL DİZİNİ TANIMLA
-        // GitHub Pages alt dizin yolunuzu kullanmaya devam ediyoruz.
-        const basePath = 'https://metatronslove.github.io/batch-and-bash-conversion-scripts-for-ffmpeg/ffmpeg-0.11.0/core/';
+        // Kütüphanenin Constructor'ı: FFmpegWASM.FFmpeg olarak dışa aktarılması beklenir.
+        // Hata almamıza rağmen bu yolu denemek zorundayız.
+        const FFmpegClass = window.FFmpegWASM.FFmpeg; 
+        
+        // KÜTÜPHANENİN ÇEKİRDEK DOSYALARINI BULACAĞI TEMEL DİZİN:
+        const basePath = 'https://metatronslove.github.io/batch-and-bash-conversion-scripts-for-ffmpeg/';
 
-        // FFmpeg nesnesini, bulduğumuz fonksiyonu çağırarak oluştur.
-        // Bu, createFFmpegCore({ corePath: '...' }) şeklinde çalışır.
-        ffmpeg = createFFmpegCoreFunction({ 
+        // Constructor'da tüm URL'leri kütüphaneye açıkça veriyoruz.
+        // Bu, Worker'ın dosyaları doğru yoldan indirmesini sağlar.
+        ffmpeg = new FFmpegClass({ 
             log: true,
-            corePath: basePath + 'ffmpeg-core.js', 
-            // Eski versiyonlarda bu değişkenin adı farklı olabilir.
-            workerScript: basePath + 'ffmpeg-core.worker.js', 
+            // Mutlak yollar, alt dizin sorununu çözmelidir.
+            coreURL: basePath + 'ffmpeg-core.js', 
+            wasmURL: basePath + 'ffmpeg-core.wasm',
+            workerURL: basePath + 'ffmpeg-core.worker.js',
             progress: ({ ratio }) => {
                 const progress = Math.round(ratio * 100);
                 updateProgressBars(progress);
             }
         });
 
-        // FFmpeg nesnesini aldıktan sonra yükle (load).
+        // Kütüphanenin yükleme fonksiyonu artık 'load'
         await ffmpeg.load();
         
         isFFmpegLoaded = true;
