@@ -681,49 +681,55 @@ async function initFFmpeg() {
         
         const { FFmpeg } = FFmpegWASM;
         
-        // ESKİ API - new FFmpeg() kullan
         ffmpeg = new FFmpeg();
         
         console.log('FFmpeg instance oluşturuldu');
 
-        // Progress güncelleme fonksiyonu
-        const updateProgress = (progress) => {
+        // Gerçek indirme progress'ini takip etmek için
+        let totalSize = 0;
+        let loadedSize = 0;
+        
+        // XMLHttpRequest ile WASM dosyasını kendimiz indirelim
+        const wasmUrl = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm';
+        
+        // Önce dosya boyutunu öğren
+        const updateProgress = (loaded, total) => {
             if (progressFill && progressText) {
-                const percentage = Math.min(95, Math.max(5, Math.round(progress * 100)));
-                progressFill.style.width = `${percentage}%`;
+                const percentage = total > 0 ? Math.round((loaded / total) * 100) : 0;
+                progressFill.style.width = `${Math.max(5, percentage)}%`;
                 
-                if (progress < 0.3) {
-                    progressText.textContent = `FFmpeg çekirdek dosyaları yükleniyor... %${percentage}`;
-                } else if (progress < 0.7) {
-                    progressText.textContent = `WASM modülleri yükleniyor... %${percentage}`;
+                const loadedMB = (loaded / 1024 / 1024).toFixed(1);
+                const totalMB = (total / 1024 / 1024).toFixed(1);
+                
+                if (percentage < 100) {
+                    progressText.textContent = `İndiriliyor: ${loadedMB}MB / ${totalMB}MB (%${percentage})`;
                 } else {
-                    progressText.textContent = `Son hazırlıklar yapılıyor... %${percentage}`;
+                    progressText.textContent = `Başlatılıyor...`;
                 }
             }
         };
 
-        // Manuel progress simülasyonu (gerçek progress tracking zor olduğu için)
-        let simulatedProgress = 0;
-        const progressInterval = setInterval(() => {
-            if (simulatedProgress < 90) {
-                simulatedProgress += 1;
-                updateProgress(simulatedProgress / 100);
+        // Manuel fallback progress (eğer indirme takılırsa)
+        let fallbackProgress = 5;
+        const fallbackInterval = setInterval(() => {
+            if (fallbackProgress < 95) {
+                fallbackProgress += 0.5;
+                if (progressFill && progressText && progressFill.style.width === '5%') {
+                    progressFill.style.width = `${fallbackProgress}%`;
+                    progressText.textContent = `Hazırlanıyor... %${Math.round(fallbackProgress)}`;
+                }
             }
-        }, 100);
-
-        if (progressText) {
-            progressText.textContent = 'FFmpeg çekirdek dosyaları yükleniyor... %10';
-        }
+        }, 500);
 
         console.log('FFmpeg.load() çağrılıyor...');
         
         await ffmpeg.load({
             coreURL: 'ffmpeg-core.js',
-            wasmURL: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm'
+            wasmURL: wasmUrl
         });
         
-        // Simülasyonu temizle ve %100 yap
-        clearInterval(progressInterval);
+        // Fallback interval'i temizle
+        clearInterval(fallbackInterval);
         
         isFFmpegLoaded = true;
         console.log('FFmpeg başarıyla yüklendi!');
@@ -737,8 +743,9 @@ async function initFFmpeg() {
 
         // 3 saniye sonra progress bar'ı gizle
         setTimeout(() => {
-            if (progressFill && progressText) {
-                document.getElementById('ffmpeg-progress-container').style.display = 'none';
+            const progressContainer = document.getElementById('ffmpeg-progress-container');
+            if (progressContainer) {
+                progressContainer.style.display = 'none';
             }
         }, 3000);
 
