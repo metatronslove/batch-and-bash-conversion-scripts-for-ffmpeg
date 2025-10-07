@@ -725,14 +725,8 @@ if (typeof ffmpeg.on === 'function') {
 }
         
         // 3. Yüklemeyi başlat.
-        await ffmpeg.load();
-        
-        isFFmpegLoaded = true;
-        
-        // KRİTİK DÜZELTME: Yükleme tamamlandığında progress bar'ı %100 yap
-        const progressFill = document.getElementById('ffmpeg-progress-fill');
-        const progressText = document.getElementById('ffmpeg-progress-text');
-        
+        await ffmpeg.load();        
+        isFFmpegLoaded = true;                
         if (progressFill && progressText) {
             progressFill.style.width = '100%';
             // Kısa bir süre sonra tamamlandı mesajını göster
