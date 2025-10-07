@@ -770,13 +770,18 @@ async function downloadWithResume(url, totalSize, onProgress) {
                 console.log(`İndirme progress: ${loaded}/${totalSize} (${percentage}%)`);
                 onProgress(loaded, totalSize, percentage);
                 
-                // Her %5'te bir cache'e kaydet
-                if (percentage % 5 === 0) {
-                    const currentData = new Uint8Array(existingData.length + event.loaded);
-                    currentData.set(existingData);
-                    currentData.set(new Uint8Array(xhr.response), existingData.length);
-                    setToDB(CACHE_KEY, currentData);
-                }
+// İndirme sırasında cache'e kaydetme kısmını düzelt
+if (percentage % 5 === 0 || percentage === 100) {
+    // Sadece tamamlanmış veya belirli aralıklarda cache'e kaydet
+    const currentData = new Uint8Array(startByte + event.loaded);
+    if (existingData.length > 0) {
+        currentData.set(existingData);
+    }
+    if (xhr.response) {
+        currentData.set(new Uint8Array(xhr.response), startByte);
+    }
+    setToDB(CACHE_KEY, currentData);
+}
             }
         };
         
@@ -856,11 +861,23 @@ async function initFFmpeg() {
         console.log('WASM indirme tamamlandı, FFmpeg başlatılıyor...');
         updateProgressBar(95, 'FFmpeg başlatılıyor...');
 
-        // FFmpeg'i başlat
+        // WASM'ı blob URL'ye dönüştür ve hazır olduğundan emin ol
+        const wasmBlob = new Blob([wasmBuffer], { type: 'application/wasm' });
+        const wasmBlobUrl = URL.createObjectURL(wasmBlob);
+        
+        // Blob URL'nin hazır olmasını bekle
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        console.log('WASM blob URL hazır:', wasmBlobUrl);
+
+        // FFmpeg'i başlat - TÜM dosyalar hazır olduğunda
         await ffmpeg.load({
             coreURL: 'ffmpeg-core.js',
-            wasmURL: URL.createObjectURL(new Blob([wasmBuffer]))
+            wasmURL: wasmBlobUrl
         });
+        
+        // Blob URL'yi temizle
+        URL.revokeObjectURL(wasmBlobUrl);
         
         isFFmpegLoaded = true;
         console.log('FFmpeg başarıyla yüklendi!');
@@ -869,8 +886,8 @@ async function initFFmpeg() {
         
         showGlobalStatus('✅ FFmpeg başarıyla yüklendi! Artık dönüşüm yapabilirsiniz.', 'success');
 
-        // Cache'i temizle (isteğe bağlı - storage'ı korumak isterseniz bu satırı kaldırın)
-        await clearCache();
+        // Cache'i temizleme - devam özelliği için cache'i koru
+        // await clearCache();
 
         // 3 saniye sonra progress bar'ı gizle
         setTimeout(() => {
@@ -889,6 +906,8 @@ async function initFFmpeg() {
         if (error && error.message) {
             if (error.message.includes('SIMD') || error.message.includes('CompileError')) {
                 errorMessage = 'Tarayıcınız gerekli özellikleri desteklemiyor. Lütfen Chrome, Edge veya Firefox\'un güncel sürümünü kullanın.';
+            } else if (error.message.includes('404')) {
+                errorMessage = 'FFmpeg dosyaları bulunamadı. Lütfen internet bağlantınızı kontrol edin.';
             } else {
                 errorMessage += error.message;
             }
@@ -900,7 +919,6 @@ async function initFFmpeg() {
         disableAllButtons();
     }
 }
-
 // Cache temizleme fonksiyonu (isteğe bağlı)
 async function clearCache() {
     try {
