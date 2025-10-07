@@ -647,11 +647,11 @@ async function initFFmpeg() {
 
         // 1. FFmpeg Fabrika Fonksiyonunu Al.
         // Yeni API'de global isim Ffmpeg (büyük F)
-        if (typeof window.Ffmpeg === 'undefined' || typeof window.Ffmpeg.createFFmpeg !== 'function') {
-            throw new Error('Modern FFmpeg API başlatma fonksiyonu (Ffmpeg.createFFmpeg) bulunamadı. Lütfen <script> etiketini kontrol edin.');
+        if (typeof window.Ffmpeg === 'undefined' || typeof window.Ffmpeg.createFFmpegCore !== 'function') {
+            throw new Error('Modern FFmpeg API başlatma fonksiyonu (Ffmpeg.createFFmpegCore) bulunamadı. Lütfen <script> etiketini kontrol edin.');
         }
         
-        const createFFmpeg = window.Ffmpeg.createFFmpeg;
+        const createFFmpeg = window.Ffmpeg.createFFmpegCore;
 
         // 2. FFmpeg örneğini oluştururken Single-Threaded yolları kesin olarak belirt.
         ffmpeg = createFFmpeg({ 
