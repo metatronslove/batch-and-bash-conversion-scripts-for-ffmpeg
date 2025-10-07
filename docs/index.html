@@ -663,25 +663,43 @@ const corePath = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/';
 
 async function initFFmpeg() {
     try {
-        showGlobalStatus('FFmpeg yükleniyor, lütfen bekleyin...', 'info');
+        showGlobalStatus('FFmpeg yükleniyor (27MB, bu biraz zaman alabilir)...', 'info');
+        console.log('FFmpeg yüklenmeye başlıyor...');
 
-        // FFmpegWASM'in yüklenmesini bekle
-        if (typeof window.FFmpegWASM === 'undefined') {
-            // Script henüz yüklenmediyse, biraz bekle
-            await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-
-        if (typeof window.FFmpegWASM === 'undefined' || typeof window.FFmpegWASM.createFFmpeg !== 'function') {
-            throw new Error('FFmpeg kütüphanesi yüklenemedi');
-        }
-
-        const createFFmpeg = window.FFmpegWASM.createFFmpeg;
         const progressFill = document.getElementById('ffmpeg-progress-fill');
         const progressText = document.getElementById('ffmpeg-progress-text');
 
+        // FFmpegWASM'in yüklenmesini daha uzun süre ve daha esnek şekilde bekle
+        let attempts = 0;
+        const maxAttempts = 30; // 15 saniye
+        
+        while (typeof window.FFmpegWASM === 'undefined' && attempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+            attempts++;
+            console.log(`FFmpegWASM bekleniyor... (${attempts}/${maxAttempts})`);
+            
+            if (progressText) {
+                progressText.textContent = `Script yükleniyor... (${attempts}/30)`;
+            }
+        }
+
+        if (typeof window.FFmpegWASM === 'undefined') {
+            throw new Error('FFmpeg scripti yüklenemedi. İnternet bağlantınızı kontrol edin ve sayfayı yenileyin.');
+        }
+
+        if (typeof window.FFmpegWASM.createFFmpeg !== 'function') {
+            throw new Error('FFmpeg createFFmpeg fonksiyonu bulunamadı.');
+        }
+
+        const createFFmpeg = window.FFmpegWASM.createFFmpeg;
+
+        if (progressText) {
+            progressText.textContent = 'FFmpeg çekirdek dosyaları yükleniyor...';
+        }
+
         // FFmpeg örneğini oluştur
         ffmpeg = createFFmpeg({ 
-            log: true,
+            log: false, // Log'u kapatarak performansı artır
             coreURL: corePath + 'ffmpeg-core.js', 
             wasmURL: corePath + 'ffmpeg-core.wasm',
         });
@@ -689,55 +707,61 @@ async function initFFmpeg() {
         // Progress olaylarını dinle
         ffmpeg.setProgress(({ ratio }) => {
             const progress = Math.round(ratio * 100);
+            console.log(`FFmpeg yükleme ilerlemesi: ${progress}%`);
             
             if (progressFill && progressText) {
                 progressFill.style.width = `${progress}%`;
-                progressText.textContent = `Yükleniyor: ${progress}%`;
+                
+                if (progress < 100) {
+                    progressText.textContent = `Yükleniyor: ${progress}%`;
+                } else {
+                    progressText.textContent = 'Son hazırlıklar yapılıyor...';
+                }
             }
         });
 
-        // FFmpeg'i yükle
+        // FFmpeg'i yükle (daha uzun timeout ile)
+        console.log('FFmpeg.load() çağrılıyor...');
         await ffmpeg.load();
         
         isFFmpegLoaded = true;
+        console.log('FFmpeg başarıyla yüklendi!');
         
         if (progressFill && progressText) {
             progressFill.style.width = '100%';
             progressText.textContent = 'Hazır!';
         }
         
-        showGlobalStatus('✅ FFmpeg başarıyla yüklendi!', 'success');
-        console.log('FFmpeg başarıyla yüklendi');
+        showGlobalStatus('✅ FFmpeg başarıyla yüklendi! Artık dönüşüm yapabilirsiniz.', 'success');
 
     } catch (error) {
         console.error('FFmpeg yükleme hatası:', error);
-        showGlobalStatus('FFmpeg yüklenirken hata: ' + error.message, 'error');
+        
+        let errorMessage = 'FFmpeg yüklenirken hata: ' + error.message;
+        if (error.message.includes('timeout') || error.message.includes('network')) {
+            errorMessage += ' - Büyük dosya yüklenirken zaman aşımı oldu. Lütfen sayfayı yenileyin ve daha hızlı bir internet bağlantısı kullanmayı deneyin.';
+        }
+        
+        showGlobalStatus(errorMessage, 'error');
     }
 }
 
-		function updateProgressBars(progress) {
-			console.log('Progress:', progress + '%');
-			const progressFills = document.querySelectorAll('.progress-fill');
-			const progressTexts = document.querySelectorAll('.progress-text');
-			
-			progressFills.forEach(fill => {
-				fill.style.width = `${progress}%`;
-			});
-			
-			progressTexts.forEach(text => {
-				if (progress < 100) {
-					text.textContent = `İşleniyor: %${progress}`;
-				} else {
-					text.textContent = 'Tamamlandı!';
-				}
-			});
-		}
-
-		function showGlobalStatus(message, type) {
-			const globalStatus = document.getElementById('globalStatus');
-			globalStatus.innerHTML = `<div class="status-message status-${type}">${message}</div>`;
-			globalStatus.style.display = 'block';
-		}
+function showGlobalStatus(message, type) {
+    const globalStatus = document.getElementById('globalStatus');
+    globalStatus.innerHTML = `<div class="status-message status-${type}">${message}</div>`;
+    globalStatus.style.display = 'block';
+    
+    // Hata mesajlarını daha uzun süre göster
+    if (type === 'error') {
+        setTimeout(() => {
+            globalStatus.style.display = 'none';
+        }, 10000);
+    } else {
+        setTimeout(() => {
+            globalStatus.style.display = 'none';
+        }, 5000);
+    }
+}
 
 		// Tab functionality
 		function setupTabs() {
@@ -1351,12 +1375,30 @@ async function initFFmpeg() {
 			}
 		}
 
-		// Initialize application
-		document.addEventListener('DOMContentLoaded', () => {
-			setupTabs();
-			setupFileInputs();
-			initFFmpeg();
-		});
+// Initialize application - Daha güvenli başlatma
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM yüklendi, bileşenler ayarlanıyor...');
+    setupTabs();
+    setupFileInputs();
+    
+    // FFmpeg yüklemeyi biraz geciktirerek diğer bileşenlerin önce yüklenmesini sağla
+    setTimeout(() => {
+        console.log('FFmpeg yüklemeye başlanıyor...');
+        initFFmpeg();
+    }, 1000);
+});
+
+// Sayfa yüklendikten sonra da FFmpeg'i kontrol et
+window.addEventListener('load', () => {
+    console.log('Sayfa tamamen yüklendi');
+    // FFmpeg hala yüklenmediyse, 3 saniye sonra tekrar dene
+    setTimeout(() => {
+        if (!isFFmpegLoaded && typeof window.FFmpegWASM !== 'undefined') {
+            console.log('FFmpegWASM mevcut ama init edilmemiş, tekrar deneniyor...');
+            initFFmpeg();
+        }
+    }, 3000);
+});
 	</script>
 </body>
 </html>
