@@ -634,32 +634,42 @@
 
 	<div class="global-status" id="globalStatus"></div>
 	<script>
+// GitHub Pages'de SharedArrayBuffer hatasını atlatmak için KRİTİK EKLENTİ:
+// SharedArrayBuffer tanımlı değilse, kütüphanenin kontrolünü geçmesi için onu tanımlıyoruz.
+if (typeof self.SharedArrayBuffer === 'undefined') {
+    self.SharedArrayBuffer = ArrayBuffer; 
+}
+		
 let ffmpeg; 
 let isFFmpegLoaded = false; 
 
 // Yeni ve stabil SİNGLE-THREADED (tek iş parçacıklı) core dosyalarının adresi.
-// Bu sürüm SharedArrayBuffer gerektirmez.
+// Bu sürüm SharedArrayBuffer gerektirmez ve CDN'den gelir.
 const corePath = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/';
 
 async function initFFmpeg() {
     try {
         showGlobalStatus('FFmpeg yükleniyor, lütfen bekleyin...', 'info');
 
-        // 1. FFmpeg Fabrika Fonksiyonunu Al.
-        // Yeni API'de global isim Ffmpeg (büyük F)
-        if (typeof window.FFmpeg === 'undefined' || typeof window.FFmpeg.createFFmpegCore !== 'function') {
-            throw new Error('Modern FFmpeg API başlatma fonksiyonu (Ffmpeg.createFFmpegCore) bulunamadı. Lütfen <script> etiketini kontrol edin.');
-        }
+        // 1. FFmpeg Fabrika Fonksiyonunu Güvenilir Şekilde Al.
+        let createFFmpeg;
         
-        const createFFmpeg = window.FFmpeg.createFFmpegCore;
+        // Önce modern API'yi (Büyük F) kontrol et
+        if (typeof window.Ffmpeg !== 'undefined' && typeof window.Ffmpeg.createFFmpeg === 'function') {
+            createFFmpeg = window.Ffmpeg.createFFmpeg;
+        // Sonra eski/yaygın API'yi (Büyük FF) kontrol et
+        } else if (typeof window.FFmpeg !== 'undefined' && typeof window.FFmpeg.createFFmpeg === 'function') {
+            createFFmpeg = window.FFmpeg.createFFmpeg;
+        } else {
+            // Eğer hala bulunamıyorsa, kütüphane yüklenmemiştir.
+            throw new Error('FFmpeg başlatma fonksiyonu (createFFmpeg) bulunamadı. Lütfen CDN <script> etiketini kontrol edin.');
+        }
 
         // 2. FFmpeg örneğini oluştururken Single-Threaded yolları kesin olarak belirt.
         ffmpeg = createFFmpeg({ 
             log: true,
-            // Sadece single-threaded core dosyalarını kullan.
-            coreURL: corePath + 'ffmpeg-core.js',
-            wasmURL: corePath + 'ffmpeg-core.wasm',
-            // WorkerURL'yi belirtmiyoruz, çünkü single-threaded modda worker'a gerek yoktur.
+            coreURL: corePath + 'ffmpeg-core.js', 
+            wasmURL: corePath + 'ffmpeg-core.wasm', 
         });
 
         // Progress ve Log Olaylarını Dinle
@@ -682,7 +692,7 @@ async function initFFmpeg() {
             });
         }
         
-        // 3. Yüklemeyi başlat. (SharedArrayBuffer hatası artık çıkmamalıdır)
+        // 3. Yüklemeyi başlat.
         await ffmpeg.load();
         
         isFFmpegLoaded = true;
@@ -700,7 +710,6 @@ async function initFFmpeg() {
         showGlobalStatus('FFmpeg yüklenirken kritik hata oluştu: ' + error.message, 'error');
     }
 }
-
 		function updateProgressBars(progress) {
 			console.log('Progress:', progress + '%');
 			const progressFills = document.querySelectorAll('.progress-fill');
