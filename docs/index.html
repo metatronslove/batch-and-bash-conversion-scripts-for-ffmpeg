@@ -676,9 +676,18 @@ async function initFFmpeg() {
 
         console.log('FFmpegWASM bulundu:', window.FFmpegWASM);
         
-        // FFmpegWASM doğrudan constructor olarak kullanılabilir
+        // FFmpegWASM içindeki FFmpeg class'ını al
+        const { FFmpeg } = window.FFmpegWASM;
+        
+        if (!FFmpeg || typeof FFmpeg !== 'function') {
+            console.log('FFmpegWASM içeriği:', Object.keys(window.FFmpegWASM));
+            throw new Error('FFmpeg class bulunamadı');
+        }
+
+        console.log('FFmpeg class bulundu, instance oluşturuluyor...');
+        
         // Yeni FFmpeg instance'ı oluştur
-        ffmpeg = new window.FFmpegWASM();
+        ffmpeg = new FFmpeg();
         
         console.log('FFmpeg instance oluşturuldu:', ffmpeg);
 
