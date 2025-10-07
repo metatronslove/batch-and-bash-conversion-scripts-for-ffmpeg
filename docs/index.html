@@ -353,7 +353,7 @@
         }
     </style>    
     <!-- FFmpeg.js CDN -->
-    <script src="./ffmpeg-0.11.0/js/ffmpeg.min.js"></script>
+    <script src="ffmpeg-0.11.0/js/ffmpeg.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -647,7 +647,7 @@ async function initFFmpeg() {
         ffmpeg = new window.FFmpegWASM.FFmpeg({
             log: true,
             // Sizin orijinal corePath adresinizi koruyoruz
-            corePath: './ffmpeg-0.11.0/core/ffmpeg-core.js', 
+            corePath: 'ffmpeg-0.11.0/core/ffmpeg-core.js', 
             progress: ({ ratio }) => {
                 const progress = Math.round(ratio * 100);
                 updateProgressBars(progress);
