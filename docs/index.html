@@ -628,7 +628,7 @@
     <div class="global-status" id="globalStatus"></div>
 
     <!-- FFmpeg.js CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ffmpeg/0.12.10/umd/ffmpeg.min.js"></script>
+    <script src="https://metatronslove.github.io/batch-and-bash-conversion-scripts-for-ffmpeg/js/ffmpeg.min.js"></script>
     <script>
         let ffmpeg = null;
         let isFFmpegLoaded = false;
@@ -653,7 +653,7 @@
 
 				ffmpeg = createFFmpeg({
 					log: true,
-					corePath: 'https://unpkg.com/@ffmpeg/core@0.12.10/dist/umd/ffmpeg-core.js',
+					corePath: 'https://metatronslove.github.io/batch-and-bash-conversion-scripts-for-ffmpeg/js/ffmpeg-core.js',
 					progress: ({ ratio }) => {
 						const progress = Math.round(ratio * 100);
 						updateProgressBars(progress);
@@ -683,11 +683,11 @@
 				showGlobalStatus('Alternatif FFmpeg yükleniyor...', 'info');
         
 				// Alternatif CDN deneyelim
-				const { createFFmpeg } = await import('https://cdnjs.cloudflare.com/ajax/libs/ffmpeg/0.12.10/umd/ffmpeg.min.js');
+				const { createFFmpeg } = await import('https://metatronslove.github.io/batch-and-bash-conversion-scripts-for-ffmpeg/js/ffmpeg.min.js');
         
 				ffmpeg = createFFmpeg({
 					log: true,
-					corePath: 'https://unpkg.com/@ffmpeg/core@0.12.10/dist/umd/ffmpeg-core.js',
+					corePath: 'https://metatronslove.github.io/batch-and-bash-conversion-scripts-for-ffmpeg/js/ffmpeg-core.js',
 					progress: ({ ratio }) => {
 						const progress = Math.round(ratio * 100);
 						updateProgressBars(progress);
@@ -1356,4 +1356,3 @@
     </script>
 </body>
 </html>
-
