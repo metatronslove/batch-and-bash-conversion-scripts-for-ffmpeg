@@ -634,6 +634,10 @@
 
 	<div class="global-status" id="globalStatus"></div>
 	<script>
+		if (typeof self.SharedArrayBuffer === 'undefined') {
+			self.SharedArrayBuffer = ArrayBuffer; 
+		}
+		
 let ffmpeg; 
 let isFFmpegLoaded = false; 
 
