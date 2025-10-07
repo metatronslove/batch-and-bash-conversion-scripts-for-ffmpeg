@@ -638,10 +638,10 @@ async function initFFmpeg() {
 
         // Kütüphaneden gelen FFmpegWASM objesini kontrol et.
         // Bu, sizin yüklediğiniz ffmpeg.js dosyasından geliyor.
-        if (typeof window.FFmpegWASM === 'undefined' || typeof window.FFmpegWASM.FFmpeg === 'undefined') {
+        // if (typeof window.FFmpegWASM === 'undefined' || typeof window.FFmpegWASM.FFmpeg === 'undefined') {
             // Eğer hala bu hatayı alıyorsanız, HTML'deki <script> etiketiniz doğru dosyayı yüklemiyordur!
-            throw new Error('FFmpeg kütüphanesi (FFmpegWASM) bulunamadı. Lütfen HTML dosyanızı kontrol edin.'); 
-        }
+        //    throw new Error('FFmpeg kütüphanesi (FFmpegWASM) bulunamadı. Lütfen HTML dosyanızı kontrol edin.'); 
+        //}
 
         // Doğru Yapı: FFmpegWASM.FFmpeg sınıfından yeni bir nesne oluşturulur (Constructor Call).
         ffmpeg = new window.FFmpegWASM.FFmpeg({
