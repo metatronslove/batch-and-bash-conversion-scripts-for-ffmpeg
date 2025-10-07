@@ -634,77 +634,69 @@
 
 	<div class="global-status" id="globalStatus"></div>
 	<script>
-		if (typeof self.SharedArrayBuffer === 'undefined') {
-			self.SharedArrayBuffer = ArrayBuffer; 
-		}
-		let ffmpeg; 
-		let isFFmpegLoaded = false; 
+let ffmpeg; 
+let isFFmpegLoaded = false; 
 
-		// Core dosyalarınızın bulunduğu alt dizin yolu:
-		const basePath = 'https://metatronslove.github.io/batch-and-bash-conversion-scripts-for-ffmpeg/ffmpeg-0.11.0/core/';
+// Core dosyalarınızın bulunduğu alt dizin yolu:
+const basePath = 'https://metatronslove.github.io/batch-and-bash-conversion-scripts-for-ffmpeg/ffmpeg-0.11.0/core/';
 
+async function initFFmpeg() {
+    try {
+        showGlobalStatus('FFmpeg yükleniyor, lütfen bekleyin...', 'info');
 
-		async function initFFmpeg() {
-    		try {
-        		showGlobalStatus('FFmpeg yükleniyor, lütfen bekleyin...', 'info');
-
-        		// 1. FFmpeg Fabrika Fonksiyonunu Al.
-        		if (typeof window.FFmpeg === 'undefined' || typeof window.FFmpeg.createFFmpeg !== 'function') {
-            		throw new Error('FFmpeg API başlatma fonksiyonu (FFmpeg.createFFmpeg) bulunamadı.');
-        		}
+        // 1. FFmpeg Fabrika Fonksiyonunu Al.
+        if (typeof window.FFmpeg === 'undefined' || typeof window.FFmpeg.createFFmpeg !== 'function') {
+            throw new Error('FFmpeg API başlatma fonksiyonu (FFmpeg.createFFmpeg) bulunamadı.');
+        }
         
-        		const createFFmpeg = window.FFmpeg.createFFmpeg;
+        const createFFmpeg = window.FFmpeg.createFFmpeg;
 
-        		// 2. FFmpeg örneğini oluştururken KRİTİK AYARI YAP:
-        		ffmpeg = createFFmpeg({ 
-            		log: true,
-            		// 🛑 ÇÖZÜM: SharedArrayBuffer hatasını çözmek için multi-threading'i kapat.
-            		// Bu, kütüphanenin thread (iş parçacığı) kullanmasını engeller.
-            		mainName: "main", 
-            		// Core yollarını tekrar zorla geçir.
-            		coreURL: basePath + 'ffmpeg-core.js',
-            		wasmURL: basePath + 'ffmpeg-core.wasm',
-            		workerURL: basePath + 'ffmpeg-core.worker.js',
-        		});
+        // 2. FFmpeg örneğini oluştururken SADECE tek çekirdek dosyalarını kullan!
+        ffmpeg = createFFmpeg({ 
+            log: true,
+            // 🛑 ÇÖZÜM: workerURL ve mainName parametreleri KALDIRILDI.
+            // SADECE coreURL ve wasmURL kalmalıdır.
+            coreURL: basePath + 'ffmpeg-core.js', // (Artık single-threaded olmalı)
+            wasmURL: basePath + 'ffmpeg-core.wasm', // (Artık single-threaded olmalı)
+        });
 
-        		// Progress ve Log Olaylarını Dinle (En son çalışan kodumuz)
-        		const progressFill = document.getElementById('ffmpeg-progress-fill');
-        		const progressText = document.getElementById('ffmpeg-progress-text');
+        // Progress ve Log Olaylarını Dinle
+        const progressFill = document.getElementById('ffmpeg-progress-fill');
+        const progressText = document.getElementById('ffmpeg-progress-text');
 
-        		if (typeof ffmpeg.on === 'function') {
-            		ffmpeg.on('log', ({ message }) => console.log('FFmpeg Log:', message));
+        if (typeof ffmpeg.on === 'function') {
+            ffmpeg.on('log', ({ message }) => console.log('FFmpeg Log:', message));
 
-            		ffmpeg.on('progress', ({ ratio }) => {
-                		const progress = Math.round(ratio * 100);
+            ffmpeg.on('progress', ({ ratio }) => {
+                const progress = Math.round(ratio * 100);
                 
-                		if (progressFill && progressText) {
-                    		// Yükleme ve dönüştürme progress'ini göster
-                    		progressFill.style.width = `${progress}%`;
-                    		progressText.textContent = `Yükleniyor: ${progress}%`;
-                		} else {
-                    		console.log(`FFmpeg Yükleniyor: ${progress}%`);
-                		}
-            		});
-        		}
+                if (progressFill && progressText) {
+                    progressFill.style.width = `${progress}%`;
+                    progressText.textContent = `Yükleniyor: ${progress}%`;
+                } else {
+                    console.log(`FFmpeg Yükleniyor: ${progress}%`);
+                }
+            });
+        }
         
-        		// 3. Yüklemeyi başlat. (Artık tek iş parçacıklı)
-        		await ffmpeg.load();
+        // 3. Yüklemeyi başlat.
+        await ffmpeg.load();
         
-        		isFFmpegLoaded = true;
+        isFFmpegLoaded = true;
         
-        		// Yükleme tamamlandı mesajı
-        		showGlobalStatus('✅ FFmpeg başarıyla yüklendi ve KULLANIMA HAZIR!', 'success');
+        // Yükleme tamamlandı mesajı
+        showGlobalStatus('✅ FFmpeg başarıyla yüklendi ve KULLANIMA HAZIR!', 'success');
         
-        		if (progressFill && progressText) {
-            		progressFill.style.width = '100%';
-            		progressText.textContent = 'Yükleme Tamamlandı';
-        		}
+        if (progressFill && progressText) {
+            progressFill.style.width = '100%';
+            progressText.textContent = 'Yükleme Tamamlandı';
+        }
 
-    		} catch (error) {
-				console.error('FFmpeg yükleme hatası:', error);
-				showGlobalStatus('FFmpeg yüklenirken kritik hata oluştu: ' + error.message, 'error');
-			}
-		}
+    } catch (error) {
+        console.error('FFmpeg yükleme hatası:', error);
+        showGlobalStatus('FFmpeg yüklenirken kritik hata oluştu: ' + error.message, 'error');
+    }
+}
 
 		function updateProgressBars(progress) {
 			console.log('Progress:', progress + '%');
