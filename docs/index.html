@@ -828,7 +828,7 @@ async function initFFmpeg() {
         console.log('FFmpeg instance oluşturuldu');
 
         // SIMD OLMADAN WASM dosyası
-        const wasmUrl = 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/ffmpeg-core.wasm';
+        const wasmUrl = 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/umd/ffmpeg-core.wasm';
         
         // Dosya boyutu
         const totalSize = 31700000; // 31.7MB
@@ -858,7 +858,7 @@ async function initFFmpeg() {
 
         // FFmpeg'i başlat
         await ffmpeg.load({
-            coreURL: 'ffmpeg/ffmpeg-core.js',
+            coreURL: 'ffmpeg-core.js',
             wasmURL: URL.createObjectURL(new Blob([wasmBuffer]))
         });
         
