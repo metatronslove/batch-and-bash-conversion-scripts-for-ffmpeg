@@ -353,7 +353,7 @@
 		}
 	</style>	
 	<!-- FFmpeg.js CDN -->
-	<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.6/dist/ffmpeg.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.6/dist/umd/ffmpeg.js"></script>
 </head>
 <body>
 	<div class="container">
@@ -645,7 +645,7 @@ let isFFmpegLoaded = false;
 
 // Yeni ve stabil SİNGLE-THREADED (tek iş parçacıklı) core dosyalarının adresi.
 // Bu sürüm SharedArrayBuffer gerektirmez ve CDN'den gelir.
-const corePath = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/';
+const corePath = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/';
 
 async function initFFmpeg() {
     try {
