@@ -660,11 +660,17 @@ let isFFmpegLoaded = false;
 
 async function initFFmpeg() {
     try {
-        showGlobalStatus('FFmpeg yükleniyor (27MB, bu biraz zaman alabilir)...', 'info');
+        showGlobalStatus('FFmpeg yükleniyor (30MB, bu biraz zaman alabilir)...', 'info');
         console.log('FFmpeg yüklenmeye başlıyor...');
 
         const progressFill = document.getElementById('ffmpeg-progress-fill');
         const progressText = document.getElementById('ffmpeg-progress-text');
+
+        // Progress bar'ı başlat
+        if (progressFill && progressText) {
+            progressFill.style.width = '5%';
+            progressText.textContent = 'FFmpeg başlatılıyor...';
+        }
 
         // FFmpegWASM kontrolü
         if (typeof FFmpegWASM === 'undefined') {
@@ -680,11 +686,35 @@ async function initFFmpeg() {
         
         console.log('FFmpeg instance oluşturuldu');
 
+        // Progress güncelleme fonksiyonu
+        const updateProgress = (progress) => {
+            if (progressFill && progressText) {
+                const percentage = Math.min(95, Math.max(5, Math.round(progress * 100)));
+                progressFill.style.width = `${percentage}%`;
+                
+                if (progress < 0.3) {
+                    progressText.textContent = `FFmpeg çekirdek dosyaları yükleniyor... %${percentage}`;
+                } else if (progress < 0.7) {
+                    progressText.textContent = `WASM modülleri yükleniyor... %${percentage}`;
+                } else {
+                    progressText.textContent = `Son hazırlıklar yapılıyor... %${percentage}`;
+                }
+            }
+        };
+
+        // Manuel progress simülasyonu (gerçek progress tracking zor olduğu için)
+        let simulatedProgress = 0;
+        const progressInterval = setInterval(() => {
+            if (simulatedProgress < 90) {
+                simulatedProgress += 1;
+                updateProgress(simulatedProgress / 100);
+            }
+        }, 100);
+
         if (progressText) {
-            progressText.textContent = 'FFmpeg çekirdek dosyaları yükleniyor...';
+            progressText.textContent = 'FFmpeg çekirdek dosyaları yükleniyor... %10';
         }
 
-        // setProgress YOK - direkt load et
         console.log('FFmpeg.load() çağrılıyor...');
         
         await ffmpeg.load({
@@ -692,18 +722,38 @@ async function initFFmpeg() {
             wasmURL: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm'
         });
         
+        // Simülasyonu temizle ve %100 yap
+        clearInterval(progressInterval);
+        
         isFFmpegLoaded = true;
         console.log('FFmpeg başarıyla yüklendi!');
         
         if (progressFill && progressText) {
             progressFill.style.width = '100%';
-            progressText.textContent = 'Hazır!';
+            progressText.textContent = '✅ Hazır! Artık dönüşüm yapabilirsiniz.';
         }
         
         showGlobalStatus('✅ FFmpeg başarıyla yüklendi! Artık dönüşüm yapabilirsiniz.', 'success');
 
+        // 3 saniye sonra progress bar'ı gizle
+        setTimeout(() => {
+            if (progressFill && progressText) {
+                document.getElementById('ffmpeg-progress-container').style.display = 'none';
+            }
+        }, 3000);
+
     } catch (error) {
         console.error('FFmpeg yükleme hatası:', error);
+        
+        const progressFill = document.getElementById('ffmpeg-progress-fill');
+        const progressText = document.getElementById('ffmpeg-progress-text');
+        
+        if (progressFill && progressText) {
+            progressFill.style.width = '100%';
+            progressFill.style.background = 'var(--error)';
+            progressText.textContent = '❌ Yükleme hatası! Sayfayı yenileyin.';
+        }
+        
         showGlobalStatus('FFmpeg yüklenirken hata: ' + error.message, 'error');
     }
 }
