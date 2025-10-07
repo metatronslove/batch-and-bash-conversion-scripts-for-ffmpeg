@@ -658,7 +658,7 @@ if (typeof self.SharedArrayBuffer === 'undefined') {
 let ffmpeg; 
 let isFFmpegLoaded = false;
 
-// Güncel core dosya yolları
+// Single-Threaded çekirdek dosyalarının adresi. (v0.12.6 sürümü)
 const corePath = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/';
 
 async function initFFmpeg() {
@@ -669,55 +669,22 @@ async function initFFmpeg() {
         const progressFill = document.getElementById('ffmpeg-progress-fill');
         const progressText = document.getElementById('ffmpeg-progress-text');
 
-        // FFmpeg modülünü bul
-        let createFFmpeg = null;
-        
-        // Farklı olası global yapıları kontrol et
-        if (window.FFmpeg && window.FFmpeg.createFFmpeg) {
-            createFFmpeg = window.FFmpeg.createFFmpeg;
-            console.log('✅ FFmpeg bulundu: window.FFmpeg.createFFmpeg');
-        } else if (window.FFmpegWASM && window.FFmpegWASM.createFFmpeg) {
-            createFFmpeg = window.FFmpegWASM.createFFmpeg;
-            console.log('✅ FFmpeg bulundu: window.FFmpegWASM.createFFmpeg');
-        } else if (window.createFFmpeg) {
-            createFFmpeg = window.createFFmpeg;
-            console.log('✅ FFmpeg bulundu: window.createFFmpeg');
-        } else {
-            // Tüm global nesneyi incele
-            console.log('Detaylı FFmpeg araması...');
-            for (const key in window) {
-                if (window[key] && typeof window[key] === 'object') {
-                    if (window[key].createFFmpeg) {
-                        createFFmpeg = window[key].createFFmpeg;
-                        console.log(`✅ FFmpeg bulundu: window.${key}.createFFmpeg`);
-                        break;
-                    }
-                }
-            }
+        // FFmpegWASM global değişkenini kontrol et
+        if (typeof window.FFmpegWASM === 'undefined') {
+            throw new Error('FFmpegWASM kütüphanesi yüklenemedi.');
         }
 
-        if (!createFFmpeg) {
-            // Son çare: doğrudan global createFFmpeg fonksiyonunu ara
-            if (typeof createFFmpeg === 'undefined' && window.FFmpeg) {
-                console.log('FFmpeg nesnesi:', Object.keys(window.FFmpeg));
-            }
-            throw new Error('FFmpeg createFFmpeg fonksiyonu bulunamadı. Lütfen CDN linkini kontrol edin.');
-        }
+        console.log('FFmpegWASM bulundu:', window.FFmpegWASM);
+        
+        // FFmpegWASM doğrudan constructor olarak kullanılabilir
+        // Yeni FFmpeg instance'ı oluştur
+        ffmpeg = new window.FFmpegWASM();
+        
+        console.log('FFmpeg instance oluşturuldu:', ffmpeg);
 
         if (progressText) {
             progressText.textContent = 'FFmpeg çekirdek dosyaları yükleniyor...';
         }
-
-        console.log('FFmpeg instance oluşturuluyor...');
-        
-        // FFmpeg örneğini oluştur
-        ffmpeg = createFFmpeg({ 
-            log: false,
-            coreURL: corePath + 'ffmpeg-core.js', 
-            wasmURL: corePath + 'ffmpeg-core.wasm',
-        });
-
-        console.log('FFmpeg instance oluşturuldu, load() çağrılıyor...');
 
         // Progress olaylarını dinle
         ffmpeg.setProgress(({ ratio }) => {
@@ -730,8 +697,18 @@ async function initFFmpeg() {
             }
         });
 
-        // FFmpeg'i yükle
-        await ffmpeg.load();
+        // Log olaylarını dinle (opsiyonel)
+        ffmpeg.on('log', ({ message }) => {
+            console.log('FFmpeg Log:', message);
+        });
+
+        console.log('FFmpeg.load() çağrılıyor...');
+        
+        // FFmpeg'i yükle - core URL'leri burada belirtiyoruz
+        await ffmpeg.load({
+            coreURL: corePath + 'ffmpeg-core.js',
+            wasmURL: corePath + 'ffmpeg-core.wasm'
+        });
         
         isFFmpegLoaded = true;
         console.log('FFmpeg başarıyla yüklendi!');
@@ -749,8 +726,6 @@ async function initFFmpeg() {
         let errorMessage = 'FFmpeg yüklenirken hata: ' + error.message;
         if (error.message.includes('timeout') || error.message.includes('network')) {
             errorMessage += ' - Büyük dosya yüklenirken zaman aşımı oldu. Lütfen sayfayı yenileyin ve daha hızlı bir internet bağlantısı kullanmayı deneyin.';
-        } else if (error.message.includes('createFFmpeg')) {
-            errorMessage += ' - CDN linki değişmiş olabilir. Lütfen farklı bir CDN deneyin.';
         }
         
         showGlobalStatus(errorMessage, 'error');
