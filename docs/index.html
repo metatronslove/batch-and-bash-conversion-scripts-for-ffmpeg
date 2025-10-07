@@ -629,33 +629,38 @@
 
     <div class="global-status" id="globalStatus"></div>
     <script>
-let ffmpeg; 
-let isFFmpegLoaded = false; 
+let ffmpeg; // Globalde tanımlı olmalı
+let isFFmpegLoaded = false; // Globalde tanımlı olmalı
 
 async function initFFmpeg() {
     try {
         showGlobalStatus('FFmpeg yükleniyor, lütfen bekleyin...', 'info');
 
-        // Yeni KONTROL: SADECE global 'FFmpeg' değişkenini kontrol et.
-        if (typeof window.FFmpeg === 'undefined') {
-            // Eğer hala bu hatayı alıyorsanız, HTML'deki <script> etiketi dosyanızı yükleyemiyordur.
-            throw new Error('FFmpeg kütüphanesi (Global FFmpeg objesi) bulunamadı. Lütfen HTML dosyanızı kontrol edin.'); 
+        let createFFmpegCoreFunction;
+
+        // KONTROL 1: createFFmpegCore fonksiyonunu doğrudan globalde ara (En Olması Gereken)
+        if (typeof window.createFFmpegCore === 'function') {
+            createFFmpegCoreFunction = window.createFFmpegCore;
+        } 
+        // KONTROL 2: Veya createFFmpeg adıyla globalde ara (Önceki Denemelerden Kalan Eski Versiyon Adı)
+        else if (typeof window.createFFmpeg === 'function') {
+            createFFmpegCoreFunction = window.createFFmpeg;
+        } 
+        else {
+            // Eğer fonksiyon bulunamazsa, HTML'deki dosya yüklenmemiştir.
+            throw new Error('FFmpeg başlatma fonksiyonu (createFFmpegCore veya createFFmpeg) bulunamadı. Lütfen HTML dosyanızı kontrol edin.'); 
         }
 
-        // Kütüphane değişken adını artık biliyoruz: window.FFmpeg
-        const FFmpegClass = window.FFmpeg;
-
-        // KÜTÜPHANENİN ÇEKİRDEK DOSYALARINI BULACAĞI TEMEL DİZİNİ TANIMLA:
-        // Bu, çekirdek dosyalarınızın (ffmpeg-core.js, .wasm, .worker.js) bulunduğu klasör olmalıdır.
+        // KÜTÜPHANENİN ÇEKİRDEK DOSYALARINI BULACAĞI TEMEL DİZİNİ TANIMLA
+        // GitHub Pages alt dizin yolunuzu kullanmaya devam ediyoruz.
         const basePath = 'https://metatronslove.github.io/batch-and-bash-conversion-scripts-for-ffmpeg/';
 
-        // Constructor'da gerekli parametreleri gönder.
-        // Artık 'new FFmpegWASM.FFmpeg' yerine 'new FFmpeg' kullanıyoruz.
-        ffmpeg = new FFmpegClass({ 
+        // FFmpeg nesnesini, bulduğumuz fonksiyonu çağırarak oluştur.
+        // Bu, createFFmpegCore({ corePath: '...' }) şeklinde çalışır.
+        ffmpeg = createFFmpegCoreFunction({ 
             log: true,
-            // corePath, core dosyasına tam yolu gösterir.
             corePath: basePath + 'ffmpeg-core.js', 
-            // Worker'ın Worker betiğini bulması için tam yolu gösteriyoruz.
+            // Eski versiyonlarda bu değişkenin adı farklı olabilir.
             workerScript: basePath + 'ffmpeg-core.worker.js', 
             progress: ({ ratio }) => {
                 const progress = Math.round(ratio * 100);
@@ -663,12 +668,7 @@ async function initFFmpeg() {
             }
         });
 
-        // Kütüphanenin eski sürümlerinde bu ayar gerekebilir. Yeni sürümde constructor'da ayarlanır.
-        // Yine de deneyebiliriz:
-        if (ffmpeg.setCorePath) {
-             ffmpeg.setCorePath(basePath + 'ffmpeg-core.js');
-        }
-
+        // FFmpeg nesnesini aldıktan sonra yükle (load).
         await ffmpeg.load();
         
         isFFmpegLoaded = true;
