@@ -729,12 +729,20 @@ if (typeof ffmpeg.on === 'function') {
         
         isFFmpegLoaded = true;
         
-        // Yükleme tamamlandı mesajı
-        showGlobalStatus('✅ FFmpeg başarıyla yüklendi ve KULLANIMA HAZIR!', 'success');
+        // KRİTİK DÜZELTME: Yükleme tamamlandığında progress bar'ı %100 yap
+        const progressFill = document.getElementById('ffmpeg-progress-fill');
+        const progressText = document.getElementById('ffmpeg-progress-text');
         
         if (progressFill && progressText) {
             progressFill.style.width = '100%';
-            progressText.textContent = 'Yükleme Tamamlandı';
+            // Kısa bir süre sonra tamamlandı mesajını göster
+            setTimeout(() => {
+                showGlobalStatus('✅ FFmpeg başarıyla yüklendi ve KULLANIMA HAZIR!', 'success');
+                progressText.textContent = 'Hazır!';
+                // Eğer progress bar'ı kaybetmek isterseniz burada progressFill'i gizleyebilirsiniz.
+            }, 500); 
+        } else {
+            showGlobalStatus('✅ FFmpeg başarıyla yüklendi ve KULLANIMA HAZIR!', 'success');
         }
 
     } catch (error) {
