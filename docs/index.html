@@ -634,32 +634,40 @@
 
 	<div class="global-status" id="globalStatus"></div>
 	<script>
-// GitHub Pages'de SharedArrayBuffer hatasını atlatmak için KRİTİK EKLENTİ:
-// SharedArrayBuffer tanımlı değilse, kütüphanenin kontrolünü geçmesi için onu tanımlıyoruz.
+// GitHub Pages'de SharedArrayBuffer hatasını atlatmak için KRİTİK EKLENTİ
+// Bu, "ReferenceError: SharedArrayBuffer is not defined" hatasını çözer.
 if (typeof self.SharedArrayBuffer === 'undefined') {
     self.SharedArrayBuffer = ArrayBuffer; 
 }
-		
+
 let ffmpeg; 
 let isFFmpegLoaded = false; 
 
 // Single-Threaded çekirdek dosyalarının adresi. (v0.12.6 sürümü)
 const corePath = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/';
 
+// Yeni Başlatıcı Fonksiyon (Kütüphane hazır olana kadar bekler)
+async function waitForFFmpegReady() {
+    // Kütüphane hazır olana kadar 100ms'de bir kontrol et (Max 10 saniye)
+    for (let i = 0; i < 100; i++) {
+        // Kontrol: Sizin dosyanızın globalde tanımladığı FFmpegWASM objesi var mı?
+        if (typeof window.FFmpegWASM !== 'undefined' && typeof window.FFmpegWASM.createFFmpeg === 'function') {
+            console.log("FFmpegWASM algılandı, başlatılıyor...");
+            return window.FFmpegWASM.createFFmpeg;
+        }
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    // 10 saniye sonra hala bulunamadıysa hata fırlat
+    throw new Error('FFmpeg kütüphanesi 10 saniye içinde yüklenemedi. Lütfen <script> etiketini kontrol edin.');
+}
+
+
 async function initFFmpeg() {
     try {
         showGlobalStatus('FFmpeg yükleniyor, lütfen bekleyin...', 'info');
 
-        // 1. FFmpeg Fabrika Fonksiyonunu SADECE FFmpegWASM Adıyla Al.
-        let createFFmpeg;
-        
-        // KRİTİK KONTROL: Kütüphaneniz kendini FFmpegWASM olarak adlandırıyor.
-        if (typeof window.FFmpegWASM === 'undefined' || typeof window.FFmpegWASM.createFFmpeg !== 'function') {
-            throw new Error('FFmpeg başlatma fonksiyonu (createFFmpeg) bulunamadı. Kütüphane (FFmpegWASM) doğru yüklenemedi veya global adı değişti.');
-        }
-        
-        createFFmpeg = window.FFmpegWASM.createFFmpeg;
-
+        // 1. FFmpeg Fabrika Fonksiyonunu Yüklenene Kadar Bekleyerek Al.
+        const createFFmpeg = await waitForFFmpegReady();
 
         // 2. FFmpeg örneğini oluştururken Single-Threaded yolları kesin olarak belirt.
         ffmpeg = createFFmpeg({ 
@@ -1348,10 +1356,7 @@ async function initFFmpeg() {
 		document.addEventListener('DOMContentLoaded', () => {
 			setupTabs();
 			setupFileInputs();
-				// FFmpeg'i biraz gecikmeyle başlatalım
-			setTimeout(() => {
-				initFFmpeg();
-			}, 1000);
+			initFFmpeg();
 		});
 	</script>
 </body>
