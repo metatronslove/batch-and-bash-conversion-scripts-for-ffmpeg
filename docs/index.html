@@ -629,38 +629,33 @@
 
     <div class="global-status" id="globalStatus"></div>
     <script>
-        let FFmpeg;
-        let isFFmpegLoaded = false;
-        
+let ffmpeg; // Globalde tanımlı olmalı
+let isFFmpegLoaded = false; // Globalde tanımlı olmalı
+
 async function initFFmpeg() {
     try {
         showGlobalStatus('FFmpeg yükleniyor, lütfen bekleyin...', 'info');
 
-        let createFFmpegFunction;
-
-        // Kontrol 1: En güncel yöntem (Global 'FFmpeg' nesnesi içinden)
-        if (typeof window.FFmpeg !== 'undefined' && typeof window.FFmpeg.createFFmpeg === 'function') {
-            createFFmpegFunction = window.FFmpeg.createFFmpeg;
-        } 
-        // Kontrol 2: Bazı minimal sürümler veya paketleyiciler doğrudan globalde bırakabilir
-        else if (typeof window.createFFmpeg === 'function') {
-            createFFmpegFunction = window.createFFmpeg;
-        } 
-        else {
-            throw new Error('FFmpeg başlatma fonksiyonu (createFFmpeg) bulunamadı.'); 
+        // Yeni Kontrol: FFmpegWASM nesnesini ve içindeki FFmpeg sınıfını kontrol et.
+        if (typeof window.FFmpegWASM === 'undefined' || typeof window.FFmpegWASM.FFmpeg === 'undefined') {
+            // Eğer hala bu hatayı alıyorsanız, HTML'deki CDN adresi kesinlikle bozuktur!
+            throw new Error('FFmpeg kütüphanesi (FFmpegWASM) bulunamadı. Lütfen CDN adresini kontrol edin.'); 
         }
 
-        // Başlatma (Core Path'in yeni CDN'e ayarlı olduğundan emin olun!)
-        ffmpeg = createFFmpegFunction({
+        // Kütüphanenin beklediği gibi, FFmpegWASM.FFmpeg sınıfından yeni bir nesne oluşturulur (Constructor Call).
+        ffmpeg = new window.FFmpegWASM.FFmpeg({
             log: true,
-            corePath: 'https://metatronslove.github.io/batch-and-bash-conversion-scripts-for-ffmpeg/js/ffmpeg-core.js', // KESİNLİKLE BU ADRES OLMALI
+            // corePath: Bu adresin, yukarıdaki kütüphane sürümüyle uyumlu olması gerekir.
+            corePath: 'https://metatronslove.github.io/batch-and-bash-conversion-scripts-for-ffmpeg/js/ffmpeg-core.js', 
             progress: ({ ratio }) => {
                 const progress = Math.round(ratio * 100);
                 updateProgressBars(progress);
             }
         });
 
+        // Yeni API'de yükleme metodu 'load()'dur.
         await ffmpeg.load();
+        
         isFFmpegLoaded = true;
         showGlobalStatus('✅ FFmpeg başarıyla yüklendi!', 'success');
         
