@@ -353,7 +353,7 @@
 		}
 	</style>	
 	<!-- FFmpeg.js CDN -->
-	<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.6/dist/umd/ffmpeg.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.6/dist/umd/814.ffmpeg.js"></script>
 </head>
 <body>
 	<div class="container">
@@ -655,11 +655,11 @@ async function initFFmpeg() {
         let createFFmpeg;
         
         // Önce modern API'yi (Büyük F) kontrol et
-        if (typeof window.Ffmpeg !== 'undefined' && typeof window.Ffmpeg.createFFmpeg === 'function') {
-            createFFmpeg = window.Ffmpeg.createFFmpeg;
+        if (typeof window.Ffmpeg !== 'undefined' && typeof window.Ffmpeg.createFFmpegCore === 'function') {
+            createFFmpeg = window.Ffmpeg.createFFmpegCore;
         // Sonra eski/yaygın API'yi (Büyük FF) kontrol et
-        } else if (typeof window.FFmpeg !== 'undefined' && typeof window.FFmpeg.createFFmpeg === 'function') {
-            createFFmpeg = window.FFmpeg.createFFmpeg;
+        } else if (typeof window.FFmpeg !== 'undefined' && typeof window.FFmpeg.createFFmpegCore === 'function') {
+            createFFmpeg = window.FFmpeg.createFFmpegCore;
         } else {
             // Eğer hala bulunamıyorsa, kütüphane yüklenmemiştir.
             throw new Error('FFmpeg başlatma fonksiyonu (createFFmpeg) bulunamadı. Lütfen CDN <script> etiketini kontrol edin.');
