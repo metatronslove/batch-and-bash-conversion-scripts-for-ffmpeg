@@ -666,34 +666,42 @@ async function initFFmpeg() {
         const progressFill = document.getElementById('ffmpeg-progress-fill');
         const progressText = document.getElementById('ffmpeg-progress-text');
 
-        // FFmpeg kontrolü - farklı şekilde
-        if (typeof window.FFmpeg === 'undefined') {
-            console.error('FFmpeg bulunamadı. Mevcut global değişkenler:', Object.keys(window));
-            throw new Error('FFmpeg kütüphanesi yüklenemedi. Lütfen sayfayı yenileyin.');
+        // ESKİ API - FFmpegWASM kullan
+        if (typeof FFmpegWASM === 'undefined') {
+            throw new Error('FFmpegWASM kütüphanesi yüklenemedi.');
         }
 
-        console.log('FFmpeg bulundu:', window.FFmpeg);
+        console.log('FFmpegWASM bulundu:', FFmpegWASM);
         
-        // FFmpeg'i globalden al
-        const { createFFmpeg } = window.FFmpeg;
+        const { FFmpeg } = FFmpegWASM;
         
-        ffmpeg = createFFmpeg({
-            log: true,
-            progress: ({ ratio }) => {
-                const progress = Math.round(ratio * 100);
-                console.log(`FFmpeg yükleme ilerlemesi: ${progress}%`);
-                
-                if (progressFill && progressText) {
-                    progressFill.style.width = `${progress}%`;
-                    progressText.textContent = `Yükleniyor: ${progress}%`;
-                }
-            },
-            corePath: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js',
-            wasmPath: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm'
+        // ESKİ API - new FFmpeg() kullan
+        ffmpeg = new FFmpeg();
+        
+        console.log('FFmpeg instance oluşturuldu:', ffmpeg);
+
+        if (progressText) {
+            progressText.textContent = 'FFmpeg çekirdek dosyaları yükleniyor...';
+        }
+
+        // ESKİ API - setProgress kullan
+        ffmpeg.setProgress(({ ratio }) => {
+            const progress = Math.round(ratio * 100);
+            console.log(`FFmpeg yükleme ilerlemesi: ${progress}%`);
+            
+            if (progressFill && progressText) {
+                progressFill.style.width = `${progress}%`;
+                progressText.textContent = `Yükleniyor: ${progress}%`;
+            }
         });
 
         console.log('FFmpeg.load() çağrılıyor...');
-        await ffmpeg.load();
+        
+        // ESKİ API - load fonksiyonu
+        await ffmpeg.load({
+            coreURL: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js',
+            wasmURL: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm'
+        });
         
         isFFmpegLoaded = true;
         console.log('FFmpeg başarıyla yüklendi!');
@@ -707,7 +715,7 @@ async function initFFmpeg() {
 
     } catch (error) {
         console.error('FFmpeg yükleme hatası:', error);
-        showGlobalStatus('FFmpeg yüklenirken hata: ' + error.message + ' - Lütfen sayfayı yenileyin.', 'error');
+        showGlobalStatus('FFmpeg yüklenirken hata: ' + error.message, 'error');
     }
 }
 
