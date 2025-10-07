@@ -646,19 +646,19 @@ let isFFmpegLoaded = false;
 // Single-Threaded çekirdek dosyalarının adresi. (v0.12.6 sürümü)
 const corePath = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/';
 
-// Yeni Başlatıcı Fonksiyon (Kütüphane hazır olana kadar bekler)
+// Yeni Başlatıcı Fonksiyon (SÜRESİZ bekler)
 async function waitForFFmpegReady() {
-    // Kütüphane hazır olana kadar 100ms'de bir kontrol et (Max 10 saniye)
-    for (let i = 0; i < 100; i++) {
-        // Kontrol: Sizin dosyanızın globalde tanımladığı FFmpegWASM objesi var mı?
+    console.log("FFmpeg kütüphanesinin yüklenmesi bekleniyor...");
+    // Kütüphane hazır olana kadar 100ms'de bir kontrol et (Sınırsız)
+    while (true) {
+        // Kontrol: Kütüphaneniz kendini FFmpegWASM adıyla tanımlıyor mu?
         if (typeof window.FFmpegWASM !== 'undefined' && typeof window.FFmpegWASM.createFFmpeg === 'function') {
-            console.log("FFmpegWASM algılandı, başlatılıyor...");
+            console.log("✅ FFmpegWASM algılandı, başlatılıyor...");
             return window.FFmpegWASM.createFFmpeg;
         }
+        // 100 milisaniye bekle ve tekrar kontrol et
         await new Promise(resolve => setTimeout(resolve, 100));
     }
-    // 10 saniye sonra hala bulunamadıysa hata fırlat
-    throw new Error('FFmpeg kütüphanesi 10 saniye içinde yüklenemedi. Lütfen <script> etiketini kontrol edin.');
 }
 
 
