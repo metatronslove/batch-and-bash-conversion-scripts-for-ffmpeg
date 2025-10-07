@@ -826,7 +826,7 @@ async function downloadWithResume(url, totalSize, onProgress) {
     });
 }
 
-// Güncellenmiş initFFmpeg fonksiyonu
+// Düzeltilmiş initFFmpeg fonksiyonu
 async function initFFmpeg() {
     try {
         showGlobalStatus('FFmpeg yükleniyor...', 'info');
@@ -848,7 +848,7 @@ async function initFFmpeg() {
 
         // Doğrudan CDN linklerini kullan - en basit yöntem
         await ffmpeg.load({
-            coreURL: 'ffmpeg-core.js',
+            coreURL: 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/umd/ffmpeg-core.js',
             wasmURL: 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/umd/ffmpeg-core.wasm'
         });
         
@@ -873,22 +873,34 @@ async function initFFmpeg() {
         
         updateProgressBar(100, '❌ Yükleme hatası!');
         
-        // Daha net hata mesajı
-        let errorMessage = 'FFmpeg yüklenirken hata oluştu: ';
+        // Daha güvenli hata mesajı kontrolü
+        let errorMessage = 'FFmpeg yüklenirken hata oluştu. ';
         
-        if (error.message.includes('SIMD') || error.message.includes('CompileError')) {
-            errorMessage = `
-                <strong>WebAssembly SIMD Desteklenmiyor</strong><br><br>
-                Tarayıcınız gerekli WebAssembly SIMD özelliğini desteklemiyor.<br><br>
-                <strong>Çözüm önerileri:</strong><br>
-                • Chrome, Edge veya Firefox'un güncel sürümünü kullanın<br>
-                • Tarayıcı ayarlarında WebAssembly'yi etkinleştirin<br>
-                • Farklı bir tarayıcı deneyin
-            `;
-        } else if (error.message.includes('404') || error.message.includes('NetworkError')) {
-            errorMessage = 'FFmpeg dosyaları indirilemedi. Lütfen internet bağlantınızı kontrol edin.';
+        if (error && error.message) {
+            const errorMsg = error.message.toString();
+            
+            if (errorMsg.includes('SIMD') || errorMsg.includes('CompileError')) {
+                errorMessage = `
+                    <strong>Tarayıcı Uyumsuzluğu Tespit Edildi</strong><br><br>
+                    <strong>Mevcut Durum:</strong><br>
+                    • WebAssembly: ✅ Destekleniyor<br>
+                    • SIMD: ❌ Desteklenmiyor<br>
+                    • SharedArrayBuffer: ✅ Destekleniyor<br><br>
+                    
+                    <strong>Çözüm Önerileri:</strong><br>
+                    • <strong>Chrome 91+</strong> kullanın (En iyi destek)<br>
+                    • <strong>Firefox 90+</strong> kullanın<br>
+                    • <strong>Edge 91+</strong> kullanın<br><br>
+                    
+                    <em>Mevcut tarayıcı: ${navigator.userAgent.split(')')[0].split('(')[1]}</em>
+                `;
+            } else if (errorMsg.includes('404') || errorMsg.includes('NetworkError')) {
+                errorMessage = 'FFmpeg dosyaları indirilemedi. Lütfen internet bağlantınızı kontrol edin ve sayfayı yenileyin.';
+            } else {
+                errorMessage += 'Hata: ' + errorMsg;
+            }
         } else {
-            errorMessage += error.message;
+            errorMessage += 'Bilinmeyen hata.';
         }
         
         showGlobalStatus(errorMessage, 'error');
@@ -925,7 +937,8 @@ function checkBrowserSupport() {
     const features = {
         wasm: typeof WebAssembly !== 'undefined',
         simd: false,
-        sharedArrayBuffer: typeof SharedArrayBuffer !== 'undefined'
+        sharedArrayBuffer: typeof SharedArrayBuffer !== 'undefined',
+        browser: navigator.userAgent.split(')')[0].split('(')[1] || 'Bilinmeyen'
     };
     
     // SIMD desteğini kontrol et
@@ -938,6 +951,23 @@ function checkBrowserSupport() {
     }
     
     return features;
+}
+
+// Sayfa yüklendiğinde tarayıcı desteğini göster
+function showBrowserCompatibility() {
+    const support = checkBrowserSupport();
+    console.log('Tarayıcı desteği detayları:', support);
+    
+    if (!support.simd) {
+        // SIMD desteklenmiyorsa kullanıcıyı bilgilendir
+        const warningMessage = `
+            <strong>Uyarı: SIMD Desteği Yok</strong><br>
+            Tarayıcınız WebAssembly SIMD'yi desteklemiyor.<br>
+            FFmpeg yüklemeyi deneyeceğiz ama başarısız olursa<br>
+            lütfen Chrome, Firefox veya Edge'in güncel sürümünü kullanın.
+        `;
+        showGlobalStatus(warningMessage, 'warning');
+    }
 }
 
 // Cache temizleme fonksiyonu (isteğe bağlı)
@@ -1592,15 +1622,8 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM yüklendi, bileşenler ayarlanıyor...');
     
-    // Tarayıcı desteğini kontrol et
-    const browserSupport = checkBrowserSupport();
-    console.log('Tarayıcı desteği:', browserSupport);
-    
-    if (!browserSupport.wasm) {
-        showGlobalStatus('❌ Tarayıcınız WebAssembly desteklemiyor. Lütfen güncel bir tarayıcı kullanın.', 'error');
-        disableAllButtons();
-        return;
-    }
+    // Tarayıcı uyumluluğunu göster
+    showBrowserCompatibility();
     
     setupTabs();
     setupFileInputs();
@@ -1608,6 +1631,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // FFmpeg'i hemen yükle
     console.log('FFmpeg yüklemeye başlanıyor...');
     initFFmpeg();
+});
+
+// Çift yüklenmeyi önle
+let initializationStarted = false;
+
+// Sayfa yüklendikten sonra da FFmpeg'i kontrol et
+window.addEventListener('load', () => {
+    console.log('Sayfa tamamen yüklendi');
+    
+    // Eğer FFmpeg hala yüklenmediyse ve initialization başlamadıysa
+    setTimeout(() => {
+        if (!isFFmpegLoaded && !initializationStarted && typeof FFmpegWASM !== 'undefined') {
+            console.log('FFmpeg tekrar deneniyor...');
+            initializationStarted = true;
+            initFFmpeg();
+        }
+    }, 2000);
 });
 	</script>
 </body>
