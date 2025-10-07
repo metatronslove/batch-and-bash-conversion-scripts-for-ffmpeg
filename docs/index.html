@@ -718,6 +718,18 @@ function showGlobalStatus(message, type) {
     setTimeout(() => { globalStatus.style.display = 'none'; }, type === 'error' ? 10000 : 5000);
 }
 
+// fetchFile fonksiyonunu global olarak tanımla
+function fetchFile(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            resolve(new Uint8Array(reader.result));
+        };
+        reader.onerror = reject;
+        reader.readAsArrayBuffer(file);
+    });
+}
+
 // Tab functionality
 function setupTabs() {
     const tabs = document.querySelectorAll('.tab');
@@ -1037,7 +1049,7 @@ async function convertMOVToMP4() {
             
             logMessage('movtomp4', `İşleniyor: ${file.name}`, 'info');
             
-            const fileData = new Uint8Array(await file.arrayBuffer());
+            const fileData = await fetchFile(file);
             ffmpeg.FS('writeFile', 'input.mov', fileData);
 
             await ffmpeg.run(
@@ -1078,6 +1090,7 @@ async function convertMOVToMP4() {
     }
 }
 
+// EKSİK OLAN invertVideo FONKSİYONU - Bunu diğer dönüşüm fonksiyonlarına ekle:
 async function invertVideo() {
     if (!isFFmpegLoaded || !ffmpeg) {
         logMessage('invertmp4', 'FFmpeg henüz hazır değil', 'error');
@@ -1108,7 +1121,7 @@ async function invertVideo() {
             
             logMessage('invertmp4', `İşleniyor: ${file.name}`, 'info');
             
-            const fileData = new Uint8Array(await file.arrayBuffer());
+            const fileData = await fetchFile(file);
             ffmpeg.FS('writeFile', `input.${extension}`, fileData);
 
             await ffmpeg.run(
@@ -1147,6 +1160,7 @@ async function invertVideo() {
     }
 }
 
+// EKSİK OLAN flipVideo FONKSİYONU:
 async function flipVideo() {
     if (!isFFmpegLoaded || !ffmpeg) {
         logMessage('flipmp4', 'FFmpeg henüz hazır değil', 'error');
@@ -1177,7 +1191,7 @@ async function flipVideo() {
             
             logMessage('flipmp4', `İşleniyor: ${file.name}`, 'info');
             
-            const fileData = new Uint8Array(await file.arrayBuffer());
+            const fileData = await fetchFile(file);
             ffmpeg.FS('writeFile', `input.${extension}`, fileData);
 
             await ffmpeg.run(
@@ -1215,6 +1229,7 @@ async function flipVideo() {
     }
 }
 
+// EKSİK OLAN convertMP3ToMP4WithImage FONKSİYONU:
 async function convertMP3ToMP4WithImage() {
     if (!isFFmpegLoaded || !ffmpeg) {
         logMessage('mp3tomp4j', 'FFmpeg henüz hazır değil', 'error');
@@ -1246,8 +1261,8 @@ async function convertMP3ToMP4WithImage() {
             
             logMessage('mp3tomp4j', `İşleniyor: ${audioFile.name}`, 'info');
             
-            const audioData = new Uint8Array(await audioFile.arrayBuffer());
-            const imageData = new Uint8Array(await imageFile.arrayBuffer());
+            const audioData = await fetchFile(audioFile);
+            const imageData = await fetchFile(imageFile);
             const imageExt = imageFile.name.split('.').pop();
             
             ffmpeg.FS('writeFile', 'audio.mp3', audioData);
