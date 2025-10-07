@@ -651,7 +651,6 @@
 	<div class="global-status" id="globalStatus"></div>
 	<script>
 // GitHub Pages'de SharedArrayBuffer hatasını atlatmak için KRİTİK EKLENTİ
-// Bu, "ReferenceError: SharedArrayBuffer is not defined" hatasını çözer.
 if (typeof self.SharedArrayBuffer === 'undefined') {
     self.SharedArrayBuffer = ArrayBuffer; 
 }
@@ -662,86 +661,57 @@ let isFFmpegLoaded = false;
 // Single-Threaded çekirdek dosyalarının adresi. (v0.12.6 sürümü)
 const corePath = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/';
 
-// Yeni Başlatıcı Fonksiyon (SÜRESİZ bekler)
-async function waitForFFmpegReady() {
-    console.log("FFmpeg kütüphanesinin yüklenmesi bekleniyor...");
-    // Kütüphane hazır olana kadar 100ms'de bir kontrol et (Sınırsız)
-    while (true) {
-        // Kontrol: Kütüphaneniz kendini FFmpegWASM adıyla tanımlıyor mu?
-        if (typeof window.FFmpegWASM !== 'undefined' && typeof window.FFmpegWASM.createFFmpeg === 'function') {
-            console.log("✅ FFmpegWASM algılandı, başlatılıyor...");
-            return window.FFmpegWASM.createFFmpeg;
-        }
-        // 100 milisaniye bekle ve tekrar kontrol et
-        await new Promise(resolve => setTimeout(resolve, 100));
-    }
-}
-
-
 async function initFFmpeg() {
     try {
         showGlobalStatus('FFmpeg yükleniyor, lütfen bekleyin...', 'info');
 
-        // 1. FFmpeg Fabrika Fonksiyonunu Yüklenene Kadar Bekleyerek Al.
-        const createFFmpeg = await waitForFFmpegReady();
+        // FFmpegWASM'in yüklenmesini bekle
+        if (typeof window.FFmpegWASM === 'undefined') {
+            // Script henüz yüklenmediyse, biraz bekle
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
 
-        // 2. FFmpeg örneğini oluştururken Single-Threaded yolları kesin olarak belirt.
+        if (typeof window.FFmpegWASM === 'undefined' || typeof window.FFmpegWASM.createFFmpeg !== 'function') {
+            throw new Error('FFmpeg kütüphanesi yüklenemedi');
+        }
+
+        const createFFmpeg = window.FFmpegWASM.createFFmpeg;
+        const progressFill = document.getElementById('ffmpeg-progress-fill');
+        const progressText = document.getElementById('ffmpeg-progress-text');
+
+        // FFmpeg örneğini oluştur
         ffmpeg = createFFmpeg({ 
             log: true,
-            // Single-threaded core yolları (SharedArrayBuffer hatasını önler)
             coreURL: corePath + 'ffmpeg-core.js', 
-            wasmURL: corePath + 'ffmpeg-core.wasm', 
+            wasmURL: corePath + 'ffmpeg-core.wasm',
         });
 
-        // Progress ve Log Olaylarını Dinle
-        const progressFill = document.getElementById('ffmpeg-progress-fill');
-        const progressText = document.getElementById('ffmpeg-progress-text');
-
-// initFFmpeg fonksiyonu içindeki ilerleme dinleyici bloğu:
-if (typeof ffmpeg.on === 'function') {
-    
-    ffmpeg.on('log', ({ message }) => console.log('FFmpeg Log:', message));
-
-    // KRİTİK DÜZELTME: Progress Bar Güncellemesi
-    ffmpeg.on('progress', ({ ratio }) => {
-        // Ratio, yüklemede 0'dan 1'e, dönüştürmede -1'den 1'e gider.
-        const progress = Math.round(ratio * 100);
-        
-        const progressFill = document.getElementById('ffmpeg-progress-fill');
-        const progressText = document.getElementById('ffmpeg-progress-text');
-        
-        if (progressFill && progressText) {
-            // Yüzdeliği ve metni göster
-            if (ratio >= 0) { // Yükleme/Dönüştürme sırasında
+        // Progress olaylarını dinle
+        ffmpeg.setProgress(({ ratio }) => {
+            const progress = Math.round(ratio * 100);
+            
+            if (progressFill && progressText) {
                 progressFill.style.width = `${progress}%`;
-                // Yüzde bilgisini de mesaja ekle
-                progressText.textContent = `İşleniyor: ${progress}%`; 
-            } else {
-                 // Oran -1 olduğunda (genellikle bir komut başlatıldığında)
-                 progressText.textContent = `FFmpeg Hazırlanıyor...`;
+                progressText.textContent = `Yükleniyor: ${progress}%`;
             }
-        }
-    });
-}
+        });
+
+        // FFmpeg'i yükle
+        await ffmpeg.load();
         
-        // 3. Yüklemeyi başlat.
-        await ffmpeg.load();        
-        isFFmpegLoaded = true;                
+        isFFmpegLoaded = true;
+        
         if (progressFill && progressText) {
             progressFill.style.width = '100%';
-            // Kısa bir süre sonra tamamlandı mesajını göster
-            setTimeout(() => {
-                showGlobalStatus('✅ FFmpeg başarıyla yüklendi ve KULLANIMA HAZIR!', 'success');
-                progressText.textContent = 'Hazır!';
-                // Eğer progress bar'ı kaybetmek isterseniz burada progressFill'i gizleyebilirsiniz.
-            }, 500); 
-        } else {
-            showGlobalStatus('✅ FFmpeg başarıyla yüklendi ve KULLANIMA HAZIR!', 'success');
+            progressText.textContent = 'Hazır!';
         }
+        
+        showGlobalStatus('✅ FFmpeg başarıyla yüklendi!', 'success');
+        console.log('FFmpeg başarıyla yüklendi');
 
     } catch (error) {
         console.error('FFmpeg yükleme hatası:', error);
-        showGlobalStatus('FFmpeg yüklenirken kritik hata oluştu: ' + error.message, 'error');
+        showGlobalStatus('FFmpeg yüklenirken hata: ' + error.message, 'error');
     }
 }
 
