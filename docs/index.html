@@ -636,25 +636,33 @@ async function initFFmpeg() {
     try {
         showGlobalStatus('FFmpeg yükleniyor, lütfen bekleyin...', 'info');
 
-        // Kütüphaneden gelen FFmpegWASM objesini kontrol et.
-        // Bu, sizin yüklediğiniz ffmpeg.js dosyasından geliyor.
-        // if (typeof window.FFmpegWASM === 'undefined' || typeof window.FFmpegWASM.FFmpeg === 'undefined') {
-            // Eğer hala bu hatayı alıyorsanız, HTML'deki <script> etiketiniz doğru dosyayı yüklemiyordur!
-        //    throw new Error('FFmpeg kütüphanesi (FFmpegWASM) bulunamadı. Lütfen HTML dosyanızı kontrol edin.'); 
-        //}
+        // FFmpegWASM objesini kontrol et.
+        if (typeof window.FFmpegWASM === 'undefined' || typeof window.FFmpegWASM.FFmpeg === 'undefined') {
+            throw new Error('FFmpeg kütüphanesi (FFmpegWASM) bulunamadı. Lütfen HTML dosyanızı ve dosya yollarını kontrol edin.'); 
+        }
 
-        // Doğru Yapı: FFmpegWASM.FFmpeg sınıfından yeni bir nesne oluşturulur (Constructor Call).
+        // KÜTÜPHANENİN ÇEKİRDEK DOSYALARINI BULACAĞI TEMEL DİZİNİ TANIMLA:
+        // Bu, çekirdek dosyalarınızın (ffmpeg-core.js, .wasm, .worker.js) bulunduğu klasör olmalıdır.
+        // https://metatronslove.github.io/batch-and-bash-conversion-scripts-for-ffmpeg/
+        const basePath = 'https://metatronslove.github.io/batch-and-bash-conversion-scripts-for-ffmpeg/ffmpeg-0.11.0/core/';
+
+        // Kütüphaneyi Başlatmadan Önce Base URL'yi Tanımla (Gerekli olabilir)
+        // Bu, Worker'ın doğru yoldan başlaması için kritik olabilir.
+        window.FFmpegWASM.set  = basePath; // Eğer kütüphane bu metodu destekliyorsa
+
+        // Constructor'da gerekli parametreleri gönder.
         ffmpeg = new window.FFmpegWASM.FFmpeg({
             log: true,
-            // Sizin orijinal corePath adresinizi koruyoruz
-            corePath: '/batch-and-bash-conversion-scripts-for-ffmpeg/ffmpeg-0.11.0/core/ffmpeg-core.js', 
+            // corePath, core dosyasına tam yolu gösterir.
+            corePath: basePath + 'ffmpeg-core.js', 
+            // Worker'ın Worker betiğini bulması için de tam yolu gösteriyoruz.
+            workerScript: basePath + 'ffmpeg-core.worker.js', 
             progress: ({ ratio }) => {
                 const progress = Math.round(ratio * 100);
                 updateProgressBars(progress);
             }
         });
 
-        // Yeni API'de yükleme metodu 'load()'dur.
         await ffmpeg.load();
         
         isFFmpegLoaded = true;
