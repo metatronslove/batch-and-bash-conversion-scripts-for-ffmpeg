@@ -786,7 +786,7 @@ async function initFFmpeg() {
             
             // Alternatif core URL deneyelim
             await ffmpeg.load({
-                coreURL: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/ffmpeg-core.js',
+                coreURL: 'ffmpeg-core.js',
                 wasmURL: URL.createObjectURL(new Blob([wasmBuffer]))
             });
         }
