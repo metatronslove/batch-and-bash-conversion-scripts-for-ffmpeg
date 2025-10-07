@@ -673,24 +673,17 @@ async function initFFmpeg() {
             progressText.textContent = 'FFmpeg başlatılıyor...';
         }
 
-        // FFmpegWASM kontrolü - hata yakalamayı iyileştir
+        // FFmpegWASM kontrolü
         if (typeof FFmpegWASM === 'undefined') {
-            // Alternatif yükleme deneyelim
-            if (typeof FFmpeg === 'undefined') {
-                throw new Error('FFmpeg kütüphaneleri yüklenemedi. Lütfen sayfayı yenileyin.');
-            }
-            // FFmpeg mevcutsa onu kullan
-            const { FFmpeg } = FFmpeg;
-            ffmpeg = new FFmpeg();
-        } else {
-            // Orijinal kod
-            const { FFmpeg } = FFmpegWASM;
-            ffmpeg = new FFmpeg();
+            throw new Error('FFmpegWASM kütüphanesi yüklenemedi.');
         }
+
+        const { FFmpeg } = FFmpegWASM;
+        ffmpeg = new FFmpeg();
 
         console.log('FFmpeg instance oluşturuldu');
 
-        // WASM dosyasını SIMD olmadan yüklemeyi deneyelim
+        // WASM dosyasını önce boyutunu öğrenerek indirelim
         const wasmUrl = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm';
         
         // Önce dosya boyutunu alalım
@@ -709,12 +702,13 @@ async function initFFmpeg() {
         // Gerçek indirme progress'i
         let loadedSize = 0;
         
-        // Manuel fallback
+        // Manuel fallback (eğer indirme çok yavaşsa)
         let lastProgressTime = Date.now();
         let lastLoadedSize = 0;
         
         const progressInterval = setInterval(() => {
             const now = Date.now();
+            // Eğer 10 saniyedir ilerleme yoksa, fallback mesaj göster
             if (now - lastProgressTime > 10000 && loadedSize === lastLoadedSize) {
                 if (progressText) {
                     const currentMB = (loadedSize / 1024 / 1024).toFixed(1);
@@ -724,7 +718,7 @@ async function initFFmpeg() {
             lastLoadedSize = loadedSize;
         }, 1000);
 
-        // XMLHttpRequest ile indirme
+        // XMLHttpRequest ile indirme progress'ini takip et
         const wasmBuffer = await new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
             xhr.open('GET', wasmUrl, true);
@@ -775,21 +769,12 @@ async function initFFmpeg() {
             progressText.textContent = 'FFmpeg başlatılıyor...';
         }
 
-        // FFmpeg'i SIMD olmadan başlat
-        try {
-            await ffmpeg.load({
-                coreURL: 'ffmpeg/ffmpeg-core.js', // yerel dosya
-                wasmURL: URL.createObjectURL(new Blob([wasmBuffer]))
-            });
-        } catch (loadError) {
-            console.warn('SIMD ile yükleme başarısız, alternatif deniyor...');
-            
-            // Alternatif core URL deneyelim
-            await ffmpeg.load({
-                coreURL: 'ffmpeg-core.js',
-                wasmURL: URL.createObjectURL(new Blob([wasmBuffer]))
-            });
-        }
+        // FFmpeg'i başlat
+        await ffmpeg.load({
+            coreURL: 'ffmpeg-core.js',
+            // WASM'ı blob olarak kullan
+            wasmURL: URL.createObjectURL(new Blob([wasmBuffer]))
+        });
 
         clearInterval(progressInterval);
         
@@ -824,15 +809,21 @@ async function initFFmpeg() {
             progressText.textContent = '❌ Yükleme hatası! Sayfayı yenileyin.';
         }
         
+        // SADECE BU KISMI DÜZELTTİM - error kontrolü eklendi
         let errorMessage = 'FFmpeg yüklenirken hata: ';
-        if (error.message.includes('SIMD') || error.message.includes('CompileError')) {
-            errorMessage = 'Tarayıcınız bu özelliği desteklemiyor. Lütfen Chrome, Edge veya Firefox\'un güncel sürümünü kullanın.';
+        if (error && error.message) {
+            if (error.message.includes('SIMD') || error.message.includes('CompileError')) {
+                errorMessage = 'Tarayıcınız gerekli özellikleri desteklemiyor. Lütfen Chrome, Edge veya Firefox\'un güncel sürümünü kullanın.';
+            } else {
+                errorMessage += error.message;
+            }
         } else {
-            errorMessage += error.message;
+            errorMessage += 'Bilinmeyen hata';
         }
         
         showGlobalStatus(errorMessage, 'error');
         
+        // Hata durumunda butonları devre dışı bırak
         disableAllButtons();
     }
 }
