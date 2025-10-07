@@ -353,7 +353,7 @@
         }
     </style>    
     <!-- FFmpeg.js CDN -->
-    <script src="https://metatronslove.github.io/batch-and-bash-conversion-scripts-for-ffmpeg/js/ffmpeg.js"></script>
+    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/umd/ffmpeg.js"></script>
 </head>
 <body>
     <div class="container">
@@ -647,7 +647,7 @@ async function initFFmpeg() {
         ffmpeg = new window.FFmpegWASM.FFmpeg({
             log: true,
             // Sizin orijinal corePath adresinizi koruyoruz
-            corePath: 'https://metatronslove.github.io/batch-and-bash-conversion-scripts-for-ffmpeg/js/ffmpeg-core.js', 
+            corePath: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js', 
             progress: ({ ratio }) => {
                 const progress = Math.round(ratio * 100);
                 updateProgressBars(progress);
