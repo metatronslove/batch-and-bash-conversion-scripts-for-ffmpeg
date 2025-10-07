@@ -351,7 +351,9 @@
                 text-align: center;
             }
         }
-    </style>
+    </style>    
+    <!-- FFmpeg.js CDN -->
+    <script src="https://metatronslove.github.io/batch-and-bash-conversion-scripts-for-ffmpeg/js/ffmpeg.js"></script>
 </head>
 <body>
     <div class="container">
@@ -626,88 +628,48 @@
     </div>
 
     <div class="global-status" id="globalStatus"></div>
-
-    <!-- FFmpeg.js CDN -->
-    <script src="https://metatronslove.github.io/batch-and-bash-conversion-scripts-for-ffmpeg/js/ffmpeg.min.js"></script>
     <script>
-        let ffmpeg = null;
+        let FFmpeg;
         let isFFmpegLoaded = false;
-
-		async function initFFmpeg() {
-			try {
-				showGlobalStatus('FFmpeg yükleniyor, lütfen bekleyin...', 'info');
-
-				// FFmpeg nesnesini güvenli şekilde al
-				let createFFmpeg;
         
-				// Farklı CDN yapılandırmaları için deneme
-				if (window.FFmpeg && window.FFmpeg.createFFmpeg) {
-					createFFmpeg = window.FFmpeg.createFFmpeg;
-				} else if (window.FFmpeg) {
-					createFFmpeg = window.FFmpeg;
-				} else if (typeof FFmpeg !== 'undefined') {
-					createFFmpeg = FFmpeg.createFFmpeg || FFmpeg;
-				} else {
-					throw new Error('FFmpeg kütüphanesi bulunamadı');
-				}
+async function initFFmpeg() {
+    try {
+        showGlobalStatus('FFmpeg yükleniyor, lütfen bekleyin...', 'info');
 
-				ffmpeg = createFFmpeg({
-					log: true,
-					corePath: 'https://metatronslove.github.io/batch-and-bash-conversion-scripts-for-ffmpeg/js/ffmpeg-core.js',
-					progress: ({ ratio }) => {
-						const progress = Math.round(ratio * 100);
-						updateProgressBars(progress);
-					}
-				});
+        let createFFmpegFunction;
 
-				await ffmpeg.load();
-				isFFmpegLoaded = true;
-				showGlobalStatus('✅ FFmpeg başarıyla yüklendi!', 'success');
+        // Kontrol 1: En güncel yöntem (Global 'FFmpeg' nesnesi içinden)
+        if (typeof window.FFmpeg !== 'undefined' && typeof window.FFmpeg.createFFmpeg === 'function') {
+            createFFmpegFunction = window.FFmpeg.createFFmpeg;
+        } 
+        // Kontrol 2: Bazı minimal sürümler veya paketleyiciler doğrudan globalde bırakabilir
+        else if (typeof window.createFFmpeg === 'function') {
+            createFFmpegFunction = window.createFFmpeg;
+        } 
+        else {
+            throw new Error('FFmpeg başlatma fonksiyonu (createFFmpeg) bulunamadı.'); 
+        }
 
-				setTimeout(() => {
-					const globalStatus = document.getElementById('globalStatus');
-					if (globalStatus) globalStatus.style.display = 'none';
-				}, 3000);
-			} catch (error) {
-				console.error('FFmpeg yükleme hatası:', error);
-				showGlobalStatus('FFmpeg yüklenirken hata oluştu: ' + error.message, 'error');
+        // Başlatma (Core Path'in yeni CDN'e ayarlı olduğundan emin olun!)
+        ffmpeg = createFFmpegFunction({
+            log: true,
+            corePath: 'https://metatronslove.github.io/batch-and-bash-conversion-scripts-for-ffmpeg/js/ffmpeg-core.js', // KESİNLİKLE BU ADRES OLMALI
+            progress: ({ ratio }) => {
+                const progress = Math.round(ratio * 100);
+                updateProgressBars(progress);
+            }
+        });
+
+        await ffmpeg.load();
+        isFFmpegLoaded = true;
+        showGlobalStatus('✅ FFmpeg başarıyla yüklendi!', 'success');
         
-				// Alternatif core path deneyelim
-				setTimeout(() => tryAlternativeFFmpeg(), 2000);
-			}
-		}
-
-		// Alternatif FFmpeg yükleme fonksiyonu
-		async function tryAlternativeFFmpeg() {
-			try {
-				showGlobalStatus('Alternatif FFmpeg yükleniyor...', 'info');
-        
-				// Alternatif CDN deneyelim
-				const { createFFmpeg } = await import('https://metatronslove.github.io/batch-and-bash-conversion-scripts-for-ffmpeg/js/ffmpeg.min.js');
-        
-				ffmpeg = createFFmpeg({
-					log: true,
-					corePath: 'https://metatronslove.github.io/batch-and-bash-conversion-scripts-for-ffmpeg/js/ffmpeg-core.js',
-					progress: ({ ratio }) => {
-						const progress = Math.round(ratio * 100);
-						updateProgressBars(progress);
-					}
-				});
-
-				await ffmpeg.load();
-				isFFmpegLoaded = true;
-				showGlobalStatus('✅ FFmpeg başarıyla yüklendi!', 'success');
-
-				setTimeout(() => {
-					const globalStatus = document.getElementById('globalStatus');
-					if (globalStatus) globalStatus.style.display = 'none';
-				}, 3000);
-			} catch (error) {
-				console.error('Alternatif FFmpeg yükleme hatası:', error);
-				showGlobalStatus('FFmpeg yüklenemedi. Lütfen sayfayı yenileyin.', 'error');
-			}
-		}
-
+        // ... (Kalan kod)
+    } catch (error) {
+        console.error('FFmpeg yükleme hatası:', error);
+        showGlobalStatus('FFmpeg yüklenirken hata oluştu: ' + error.message, 'error');
+    }
+}
         function updateProgressBars(progress) {
             console.log('Progress:', progress + '%');
             const progressFills = document.querySelectorAll('.progress-fill');
