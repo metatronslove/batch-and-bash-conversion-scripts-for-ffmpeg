@@ -636,42 +636,39 @@ async function initFFmpeg() {
     try {
         showGlobalStatus('FFmpeg yükleniyor, lütfen bekleyin...', 'info');
 
-        // KONTROL: Globalde 'FFmpeg' değişkenini kontrol et.
+        // KONTROL 1: Globalde FFmpeg fabrika nesnesini kontrol et.
         if (typeof window.FFmpeg === 'undefined') {
             throw new Error('FFmpeg kütüphanesi (Global FFmpeg objesi) bulunamadı. Lütfen HTML dosyanızı kontrol edin.'); 
         }
 
-        // ÇÖZÜM: 'FFmpeg' objesini doğrudan kullanıyoruz, çünkü o zaten bir Constructor DEĞİL.
-        ffmpeg = window.FFmpeg;
+        // KONTROL 2: Fabrika fonksiyonunu al. Bu genellikle 'createFFmpeg' adındadır.
+        const createFFmpeg = window.FFmpeg.createFFmpeg; 
         
-        // KÜTÜPHANENİN ÇEKİRDEK DOSYALARINI BULACAĞI TEMEL DİZİN:
-        // Core dosyalarınızın bulunduğu alt dizin yolunu kullanıyoruz.
-        const basePath = 'https://metatronslove.github.io/batch-and-bash-conversion-scripts-for-ffmpeg/ffmpeg-0.11.0/core/';
-
-        // Bu eski API yapısında core dosyalarını yüklemek için iki adım izlenir:
-        
-        // 1. Core dosya yolunu ayarla (setCorePath veya benzeri)
-        if (typeof ffmpeg.setCorePath === 'function') {
-            ffmpeg.setCorePath(basePath + 'ffmpeg-core.js');
-        } 
-        
-        // 2. Loglama ve progress fonksiyonlarını ayarla (log, progress)
-        // Eğer kütüphane on/off metotlarını destekliyorsa
-        if (typeof ffmpeg.on === 'function') {
-            ffmpeg.on('log', ({ message }) => console.log('FFmpeg Log:', message));
-            ffmpeg.on('progress', ({ ratio }) => {
-                const progress = Math.round(ratio * 100);
-                updateProgressBars(progress);
-            });
+        if (typeof createFFmpeg !== 'function') {
+             // Eğer createFFmpeg direkt yoksa ve bu, kütüphanenin eski bir versiyonuysa
+             throw new Error('FFmpeg fabrika fonksiyonu (FFmpeg.createFFmpeg) bulunamadı. Kütüphane API yapısı uyumsuz.');
         }
 
-        // Yükleme sırasında core dosyaların tam URL'sini gönderiyoruz.
-        // Bu, Worker'ın alt klasördeki dosyaları bulmasını sağlar.
-        await ffmpeg.load({
-            coreURL: basePath + 'ffmpeg-core.js', 
-            wasmURL: basePath + 'ffmpeg-core.wasm',
-            workerURL: basePath + 'ffmpeg-core.worker.js',
+        // KÜTÜPHANENİN ÇEKİRDEK DOSYALARINI BULACAĞI TEMEL DİZİN:
+        // Core dosyalarınızın bulunduğu alt dizin yolunu tam olarak kullanıyoruz.
+        const basePath = 'https://metatronslove.github.io/batch-and-bash-conversion-scripts-for-ffmpeg/ffmpeg-0.11.0/core/';
+
+        // ÇÖZÜM: FFmpeg objesini fabrika fonksiyonunu çağırarak oluştur.
+        ffmpeg = createFFmpeg({
+            log: true,
+            // Fabrika fonksiyonuna corePath'i gönder.
+            corePath: basePath + 'ffmpeg-core.js', 
         });
+
+        // Loglama ve progress fonksiyonlarını ayarla.
+        ffmpeg.on('log', ({ message }) => console.log('FFmpeg Log:', message));
+        ffmpeg.on('progress', ({ ratio }) => {
+            const progress = Math.round(ratio * 100);
+            updateProgressBars(progress);
+        });
+
+        // Artık ffmpeg değişkeni, load() metoduna sahip olan operasyonel nesnedir.
+        await ffmpeg.load();
         
         isFFmpegLoaded = true;
         showGlobalStatus('✅ FFmpeg başarıyla yüklendi!', 'success');
