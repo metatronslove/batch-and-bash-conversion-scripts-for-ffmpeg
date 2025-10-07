@@ -633,35 +633,80 @@
         let ffmpeg = null;
         let isFFmpegLoaded = false;
 
-        async function initFFmpeg() {
-            try {
-                showGlobalStatus('FFmpeg yükleniyor, lütfen bekleyin...', 'info');
+		async function initFFmpeg() {
+			try {
+				showGlobalStatus('FFmpeg yükleniyor, lütfen bekleyin...', 'info');
 
-                // FFmpeg nesnesini güvenli şekilde al
-                const { createFFmpeg } = window.FFmpeg || FFmpeg;
+				// FFmpeg nesnesini güvenli şekilde al
+				let createFFmpeg;
+        
+				// Farklı CDN yapılandırmaları için deneme
+				if (window.FFmpeg && window.FFmpeg.createFFmpeg) {
+					createFFmpeg = window.FFmpeg.createFFmpeg;
+				} else if (window.FFmpeg) {
+					createFFmpeg = window.FFmpeg;
+				} else if (typeof FFmpeg !== 'undefined') {
+					createFFmpeg = FFmpeg.createFFmpeg || FFmpeg;
+				} else {
+					throw new Error('FFmpeg kütüphanesi bulunamadı');
+				}
 
-                ffmpeg = createFFmpeg({
-                    log: true,
-                    corePath: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.15/dist/ffmpeg-core.js',
-                    progress: ({ ratio }) => {
-                        const progress = Math.round(ratio * 100);
-                        updateProgressBars(progress);
-                    }
-                });
+				ffmpeg = createFFmpeg({
+					log: true,
+					corePath: 'https://unpkg.com/@ffmpeg/core@0.12.15/dist/ffmpeg-core.js',
+					progress: ({ ratio }) => {
+						const progress = Math.round(ratio * 100);
+						updateProgressBars(progress);
+					}
+				});
 
-                await ffmpeg.load();
-                isFFmpegLoaded = true;
-                showGlobalStatus('✅ FFmpeg başarıyla yüklendi!', 'success');
+				await ffmpeg.load();
+				isFFmpegLoaded = true;
+				showGlobalStatus('✅ FFmpeg başarıyla yüklendi!', 'success');
 
-                setTimeout(() => {
-                    const globalStatus = document.getElementById('globalStatus');
-                    if (globalStatus) globalStatus.style.display = 'none';
-                }, 3000);
-            } catch (error) {
-                console.error('FFmpeg yükleme hatası:', error);
-                showGlobalStatus('FFmpeg yüklenirken hata oluştu: ' + error.message, 'error');
-            }
-        }
+				setTimeout(() => {
+					const globalStatus = document.getElementById('globalStatus');
+					if (globalStatus) globalStatus.style.display = 'none';
+				}, 3000);
+			} catch (error) {
+				console.error('FFmpeg yükleme hatası:', error);
+				showGlobalStatus('FFmpeg yüklenirken hata oluştu: ' + error.message, 'error');
+        
+				// Alternatif core path deneyelim
+				setTimeout(() => tryAlternativeFFmpeg(), 2000);
+			}
+		}
+
+		// Alternatif FFmpeg yükleme fonksiyonu
+		async function tryAlternativeFFmpeg() {
+			try {
+				showGlobalStatus('Alternatif FFmpeg yükleniyor...', 'info');
+        
+				// Alternatif CDN deneyelim
+				const { createFFmpeg } = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.15/dist/ffmpeg.min.js');
+        
+				ffmpeg = createFFmpeg({
+					log: true,
+					corePath: 'https://unpkg.com/@ffmpeg/core@0.12.15/dist/ffmpeg-core.js',
+					progress: ({ ratio }) => {
+						const progress = Math.round(ratio * 100);
+						updateProgressBars(progress);
+					}
+				});
+
+				await ffmpeg.load();
+				isFFmpegLoaded = true;
+				showGlobalStatus('✅ FFmpeg başarıyla yüklendi!', 'success');
+
+				setTimeout(() => {
+					const globalStatus = document.getElementById('globalStatus');
+					if (globalStatus) globalStatus.style.display = 'none';
+				}, 3000);
+			} catch (error) {
+				console.error('Alternatif FFmpeg yükleme hatası:', error);
+				showGlobalStatus('FFmpeg yüklenemedi. Lütfen sayfayı yenileyin.', 'error');
+			}
+		}
 
         function updateProgressBars(progress) {
             console.log('Progress:', progress + '%');
@@ -1303,7 +1348,10 @@
         document.addEventListener('DOMContentLoaded', () => {
             setupTabs();
             setupFileInputs();
-            initFFmpeg();
+                // FFmpeg'i biraz gecikmeyle başlatalım
+			setTimeout(() => {
+				initFFmpeg();
+			}, 1000);
         });
     </script>
 </body>
