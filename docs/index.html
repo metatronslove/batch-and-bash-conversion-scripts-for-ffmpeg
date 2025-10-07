@@ -827,6 +827,7 @@ async function downloadWithResume(url, totalSize, onProgress) {
 }
 
 // Güncellenmiş initFFmpeg fonksiyonu
+// Güncellenmiş initFFmpeg fonksiyonu - Aynı sürümle SIMD olmadan
 async function initFFmpeg() {
     try {
         showGlobalStatus('FFmpeg yükleniyor (31.7MB, bu biraz zaman alabilir)...', 'info');
@@ -844,33 +845,24 @@ async function initFFmpeg() {
 
         console.log('FFmpeg instance oluşturuldu');
 
-        // SIMD OLMADAN WASM dosyası
+        // Aynı URL'yi kullanıyoruz ama SIMD olmadan yüklemeye zorluyoruz
         const wasmUrl = 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/umd/ffmpeg-core.wasm';
-        
-        // Dosya boyutu
-        const totalSize = 31739621; // 31.7MB        
+        const totalSize = 31739621;
         
         console.log('WASM indirmesi başlıyor...');
         updateProgressBar(5, 'WASM indiriliyor...');
 
-        // Resume özellikli indirme
         const wasmBuffer = await downloadWithResume(
             wasmUrl, 
             totalSize,
             (loaded, total, percentage) => {
                 const loadedMB = (loaded / 1024 / 1024).toFixed(1);
                 const totalMB = (total / 1024 / 1024).toFixed(1);
-                
                 let message = `İndiriliyor: ${loadedMB}MB / ${totalMB}MB (%${percentage})`;
-                if (loaded > 0 && loaded < total) {
-                    message += ' - Duraklatılırsa kaldığı yerden devam eder';
-                }
-                
                 updateProgressBar(Math.min(95, percentage), message);
             }
         );
 
-        // WASM boyutunu kontrol et
         if (!wasmBuffer || wasmBuffer.length !== totalSize) {
             throw new Error(`WASM dosyası eksik indirildi: ${wasmBuffer ? wasmBuffer.length : 0} / ${totalSize} bytes`);
         }
@@ -878,29 +870,28 @@ async function initFFmpeg() {
         console.log('WASM indirme tamamlandı, FFmpeg başlatılıyor...');
         updateProgressBar(95, 'FFmpeg başlatılıyor...');
 
-        // WASM'ı blob URL'ye dönüştür
         const wasmBlob = new Blob([wasmBuffer], { type: 'application/wasm' });
         const wasmBlobUrl = URL.createObjectURL(wasmBlob);
         
-        console.log('WASM blob URL hazır:', wasmBlobUrl.substring(0, 50) + '...');
+        console.log('WASM blob URL hazır');
 
-        // FFmpeg'i başlat
+        // ÖNEMLİ: SIMD özelliğini devre dışı bırak
+        // FFmpeg'i özel konfigürasyonla yükle
         await ffmpeg.load({
-            coreURL: 'ffmpeg-core.js', // Yerel dosya yolunu kullan
-            wasmURL: wasmBlobUrl
+            coreURL: 'ffmpeg-core.js',
+            wasmURL: wasmBlobUrl,
+            // SIMD'i devre dışı bırakmak için
+            noSimd: true
         });
         
-        // Blob URL'yi temizle
         URL.revokeObjectURL(wasmBlobUrl);
         
         isFFmpegLoaded = true;
         console.log('FFmpeg başarıyla yüklendi!');
         
         updateProgressBar(100, '✅ Hazır! Artık dönüşüm yapabilirsiniz.');
-        
         showGlobalStatus('✅ FFmpeg başarıyla yüklendi! Artık dönüşüm yapabilirsiniz.', 'success');
 
-        // 3 saniye sonra progress bar'ı gizle
         setTimeout(() => {
             const progressContainer = document.getElementById('ffmpeg-progress-container');
             if (progressContainer) {
@@ -911,24 +902,58 @@ async function initFFmpeg() {
     } catch (error) {
         console.error('FFmpeg yükleme hatası:', error);
         
-        updateProgressBar(100, '❌ Yükleme hatası! Sayfayı yenileyin.');
+        updateProgressBar(100, '❌ Yükleme hatası!');
         
         let errorMessage = 'FFmpeg yüklenirken hata: ';
         if (error && error.message) {
             if (error.message.includes('SIMD') || error.message.includes('CompileError')) {
-                errorMessage = 'Tarayıcınız gerekli özellikleri desteklemiyor. Lütfen Chrome, Edge veya Firefox\'un güncel sürümünü kullanın.';
-            } else if (error.message.includes('404')) {
-                errorMessage = 'FFmpeg dosyaları bulunamadı. Lütfen internet bağlantınızı kontrol edin.';
-            } else if (error.message.includes('WASM dosyası eksik')) {
-                errorMessage = 'WASM dosyası tam indirilemedi. Lütfen internet bağlantınızı kontrol edip sayfayı yenileyin.';
+                errorMessage = 'SIMD hatası. Alternatif çözüm deneniyor...';
+                // Alternatif yöntem dene
+                setTimeout(() => initFFmpegAlternative(), 2000);
+                showGlobalStatus('SIMD hatası, alternatif yöntem deneniyor...', 'warning');
+                return;
             } else {
                 errorMessage += error.message;
             }
-        } else {
-            errorMessage += 'Bilinmeyen hata';
         }
         
         showGlobalStatus(errorMessage, 'error');
+        disableAllButtons();
+    }
+}
+
+// Alternatif FFmpeg yükleme yöntemi
+async function initFFmpegAlternative() {
+    try {
+        showGlobalStatus('Alternatif FFmpeg yükleniyor...', 'info');
+        updateProgressBar(50, 'Alternatif yöntem deneniyor...');
+
+        // Daha basit bir FFmpeg instance'ı oluştur
+        const { FFmpeg } = FFmpegWASM;
+        ffmpeg = new FFmpeg();
+        
+        // Minimal konfigürasyon
+        await ffmpeg.load({
+            coreURL: 'ffmpeg-core.js',
+            wasmURL: 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/umd/ffmpeg-core.wasm'
+        });
+        
+        isFFmpegLoaded = true;
+        console.log('FFmpeg alternatif yöntemle yüklendi!');
+        
+        updateProgressBar(100, '✅ Hazır! Artık dönüşüm yapabilirsiniz.');
+        showGlobalStatus('✅ FFmpeg başarıyla yüklendi! Artık dönüşüm yapabilirsiniz.', 'success');
+
+        setTimeout(() => {
+            const progressContainer = document.getElementById('ffmpeg-progress-container');
+            if (progressContainer) {
+                progressContainer.style.display = 'none';
+            }
+        }, 3000);
+        
+    } catch (error) {
+        console.error('Alternatif FFmpeg yükleme hatası:', error);
+        showGlobalStatus('❌ FFmpeg yüklenemedi. Lütfen Chrome, Edge veya Firefox kullanın.', 'error');
         disableAllButtons();
     }
 }
