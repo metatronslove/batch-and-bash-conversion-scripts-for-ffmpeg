@@ -369,7 +369,7 @@
 		}
 	</style>	
 	<!-- FFmpeg.js CDN -->
-	<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.6/dist/umd/ffmpeg.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/ffmpeg/0.12.15/umd/ffmpeg.min.js"></script>
 </head>
 <body>
 	<div class="container">
@@ -656,9 +656,9 @@ if (typeof self.SharedArrayBuffer === 'undefined') {
 }
 
 let ffmpeg; 
-let isFFmpegLoaded = false; 
+let isFFmpegLoaded = false;
 
-// Single-Threaded çekirdek dosyalarının adresi. (v0.12.6 sürümü)
+// Güncel core dosya yolları
 const corePath = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/';
 
 async function initFFmpeg() {
@@ -669,56 +669,39 @@ async function initFFmpeg() {
         const progressFill = document.getElementById('ffmpeg-progress-fill');
         const progressText = document.getElementById('ffmpeg-progress-text');
 
-        // Tüm olası global FFmpeg değişkenlerini kontrol et
-        let ffmpegModule = null;
+        // FFmpeg modülünü bul
         let createFFmpeg = null;
         
-        // Olası global değişken isimlerini kontrol et
-        const possibleGlobals = [
-            'FFmpegWASM',
-            'FFmpeg',
-            'ffmpeg',
-            'ffmpegWASM',
-            'FFmpegJS',
-            'ffmpeg_js',
-            'FFMPEG'
-        ];
-        
-        console.log('Mevcut global değişkenleri ara:', possibleGlobals);
-        
-        for (const globalName of possibleGlobals) {
-            if (window[globalName] && window[globalName].createFFmpeg) {
-                console.log(`✅ FFmpeg bulundu: window.${globalName}`);
-                ffmpegModule = window[globalName];
-                createFFmpeg = window[globalName].createFFmpeg;
-                break;
-            }
-        }
-        
-        // Eğer hala bulunamadıysa, tüm global değişkenleri listele
-        if (!createFFmpeg) {
-            console.log('Tüm global değişkenler:', Object.keys(window).filter(key => 
-                typeof window[key] === 'object' && window[key] !== null
-            ));
-            
-            // Özellikle ffmpeg ile başlayan değişkenleri ara
-            const ffmpegKeys = Object.keys(window).filter(key => 
-                key.toLowerCase().includes('ffmpeg')
-            );
-            console.log('FFmpeg ile ilgili global değişkenler:', ffmpegKeys);
-            
-            for (const key of ffmpegKeys) {
-                if (window[key] && window[key].createFFmpeg) {
-                    console.log(`✅ FFmpeg bulundu: window.${key}`);
-                    ffmpegModule = window[key];
-                    createFFmpeg = window[key].createFFmpeg;
-                    break;
+        // Farklı olası global yapıları kontrol et
+        if (window.FFmpeg && window.FFmpeg.createFFmpeg) {
+            createFFmpeg = window.FFmpeg.createFFmpeg;
+            console.log('✅ FFmpeg bulundu: window.FFmpeg.createFFmpeg');
+        } else if (window.FFmpegWASM && window.FFmpegWASM.createFFmpeg) {
+            createFFmpeg = window.FFmpegWASM.createFFmpeg;
+            console.log('✅ FFmpeg bulundu: window.FFmpegWASM.createFFmpeg');
+        } else if (window.createFFmpeg) {
+            createFFmpeg = window.createFFmpeg;
+            console.log('✅ FFmpeg bulundu: window.createFFmpeg');
+        } else {
+            // Tüm global nesneyi incele
+            console.log('Detaylı FFmpeg araması...');
+            for (const key in window) {
+                if (window[key] && typeof window[key] === 'object') {
+                    if (window[key].createFFmpeg) {
+                        createFFmpeg = window[key].createFFmpeg;
+                        console.log(`✅ FFmpeg bulundu: window.${key}.createFFmpeg`);
+                        break;
+                    }
                 }
             }
         }
 
         if (!createFFmpeg) {
-            throw new Error('FFmpeg kütüphanesi bulunamadı. CDN linki çalışmıyor olabilir.');
+            // Son çare: doğrudan global createFFmpeg fonksiyonunu ara
+            if (typeof createFFmpeg === 'undefined' && window.FFmpeg) {
+                console.log('FFmpeg nesnesi:', Object.keys(window.FFmpeg));
+            }
+            throw new Error('FFmpeg createFFmpeg fonksiyonu bulunamadı. Lütfen CDN linkini kontrol edin.');
         }
 
         if (progressText) {
@@ -729,7 +712,7 @@ async function initFFmpeg() {
         
         // FFmpeg örneğini oluştur
         ffmpeg = createFFmpeg({ 
-            log: true, // Debug için açık tut
+            log: false,
             coreURL: corePath + 'ffmpeg-core.js', 
             wasmURL: corePath + 'ffmpeg-core.wasm',
         });
@@ -743,12 +726,7 @@ async function initFFmpeg() {
             
             if (progressFill && progressText) {
                 progressFill.style.width = `${progress}%`;
-                
-                if (progress < 100) {
-                    progressText.textContent = `Yükleniyor: ${progress}%`;
-                } else {
-                    progressText.textContent = 'Son hazırlıklar yapılıyor...';
-                }
+                progressText.textContent = `Yükleniyor: ${progress}%`;
             }
         });
 
@@ -771,6 +749,8 @@ async function initFFmpeg() {
         let errorMessage = 'FFmpeg yüklenirken hata: ' + error.message;
         if (error.message.includes('timeout') || error.message.includes('network')) {
             errorMessage += ' - Büyük dosya yüklenirken zaman aşımı oldu. Lütfen sayfayı yenileyin ve daha hızlı bir internet bağlantısı kullanmayı deneyin.';
+        } else if (error.message.includes('createFFmpeg')) {
+            errorMessage += ' - CDN linki değişmiş olabilir. Lütfen farklı bir CDN deneyin.';
         }
         
         showGlobalStatus(errorMessage, 'error');
@@ -1406,17 +1386,17 @@ function showGlobalStatus(message, type) {
 			}
 		}
 
-// Initialize application - Daha güvenli başlatma
+// Initialize application
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM yüklendi, bileşenler ayarlanıyor...');
     setupTabs();
     setupFileInputs();
     
-    // FFmpeg yüklemeyi biraz geciktirerek diğer bileşenlerin önce yüklenmesini sağla
+    // FFmpeg script'inin yüklenmesi için yeterli süre bekle
     setTimeout(() => {
         console.log('FFmpeg yüklemeye başlanıyor...');
         initFFmpeg();
-    }, 1000);
+    }, 2000);
 });
 
 // Sayfa yüklendikten sonra da FFmpeg'i kontrol et
