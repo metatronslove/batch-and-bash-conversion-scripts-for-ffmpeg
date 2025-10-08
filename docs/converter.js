@@ -814,7 +814,27 @@ async function convertMP3ToMP4WithImage() {
 }
 
 function setupTabs() {
-    console.log('Tabs ayarlandı');
+    const tabs = document.querySelectorAll('.tab-link');
+    const sections = document.querySelectorAll('section');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            e.preventDefault();
+            const tabId = tab.getAttribute('data-tab');
+
+            // Tüm sekmeleri ve bölümleri sıfırla
+            tabs.forEach(t => t.classList.remove('active'));
+            sections.forEach(s => s.classList.remove('active'));
+
+            // Seçilen sekmeyi ve bölümü aktif et
+            tab.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+
+            console.log(`Sekme değiştirildi: ${tabId}`);
+        });
+    });
+
+    console.log('Sekmeler ayarlandı');
 }
 
 function setupFileInputs() {

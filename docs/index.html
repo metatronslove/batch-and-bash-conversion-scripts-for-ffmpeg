@@ -12,14 +12,16 @@
         #ffmpeg-progress-container { display: block; margin: 20px 0; }
         #ffmpeg-progress-fill { height: 20px; background: #4CAF50; transition: width 0.3s; width: 0%; }
         #ffmpeg-progress-text { margin-top: 5px; }
-        section { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        section { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; display: none; }
+        section.active { display: block; }
         button { margin-top: 10px; padding: 8px 16px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; }
         button:disabled { background: #ccc; cursor: not-allowed; }
         ul { list-style: none; padding: 0; }
         li { margin: 5px 0; }
         nav { margin: 20px 0; }
-        nav a { margin-right: 10px; text-decoration: none; color: #007BFF; }
-        nav a:hover { text-decoration: underline; }
+        nav a { margin-right: 10px; text-decoration: none; color: #007BFF; padding: 5px 10px; border-radius: 4px; }
+        nav a:hover { background: #f0f0f0; }
+        nav a.active { background: #007BFF; color: white; }
         input[type="file"] { margin: 10px 0; }
     </style>
     <script src="ffmpeg/index.js"></script>
@@ -37,15 +39,15 @@
     <div id="globalStatus" class="status-message" style="display: none;"></div>
 
     <nav>
-        <a href="#mp4-to-mp3">MP4 → MP3</a> |
-        <a href="#mp3-to-mp4">MP3 → MP4</a> |
-        <a href="#mov-to-mp4">MOV → MP4</a> |
-        <a href="#video-reverse">Video Reverse</a> |
-        <a href="#video-mirror">Video Mirror</a> |
-        <a href="#mp3-to-mp4-image">MP3 → MP4 (Resimli)</a>
+        <a href="#mp4-to-mp3" class="tab-link active" data-tab="mp4-to-mp3">MP4 → MP3</a> |
+        <a href="#mp3-to-mp4" class="tab-link" data-tab="mp3-to-mp4">MP3 → MP4</a> |
+        <a href="#mov-to-mp4" class="tab-link" data-tab="mov-to-mp4">MOV → MP4</a> |
+        <a href="#video-reverse" class="tab-link" data-tab="video-reverse">Video Reverse</a> |
+        <a href="#video-mirror" class="tab-link" data-tab="video-mirror">Video Mirror</a> |
+        <a href="#mp3-to-mp4-image" class="tab-link" data-tab="mp3-to-mp4-image">MP3 → MP4 (Resimli)</a>
     </nav>
 
-    <section id="mp4-to-mp3">
+    <section id="mp4-to-mp3" class="active">
         <h2>MP4 → MP3</h2>
         <p>MP4 videolardan ses çıkararak MP3 formatına dönüştürür</p>
         <label>Dosya Seçin:</label>
@@ -68,7 +70,7 @@
         <label>Kapak Resmi (opsiyonel):</label>
         <input type="file" id="mp3tomp4ImageInput" accept=".jpg,.jpeg,.png">
         <p>🖼️ Resim dosyasını seçin (JPEG/PNG)</p>
-        <strong>Seçilen MP3 Dosyaları:</strong>
+        <strong>Seçilen MP3 Dosyalar:</strong>
         <ul id="mp3tomp4Files"></ul>
         <button id="mp3tomp4Btn" disabled>MP4'e Dönüştür</button>
         <div id="mp3tomp4Progress" class="status-message" style="display: none;">İşleniyor...</div>
@@ -127,7 +129,7 @@
         <label>Arka Plan Resmi:</label>
         <input type="file" id="mp3tomp4jImageInput" accept=".jpg,.jpeg,.png">
         <p>🖼️ Resim dosyasını seçin (JPEG/PNG)</p>
-        <strong>Seçilen MP3 Dosyaları:</strong>
+        <strong>Seçilen MP3 Dosyalar:</strong>
         <ul id="mp3tomp4jFiles"></ul>
         <button id="mp3tomp4jBtn" disabled>MP4'e Dönüştür</button>
         <div id="mp3tomp4jProgress" class="status-message" style="display: none;">İşleniyor...</div>
