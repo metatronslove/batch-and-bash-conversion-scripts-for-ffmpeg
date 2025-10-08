@@ -60,7 +60,7 @@ var FFmpegUtil = (() => {
               }, r.onerror = e => {
                 var o, r;
                 t(Error(`File could not be read! Code=${((null === (r = (null === (o = (null == e ? void 0 : e.target) || void 0 === o ? void 0 : o.error) || void 0 === r ? void 0 : r.code)) || -1)}`))
-              }, r.readAsArrayBuffer(o)
+              , r.readAsArrayBuffer(o)
             })))
           }
           var o;
