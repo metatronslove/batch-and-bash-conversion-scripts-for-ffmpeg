@@ -2,514 +2,138 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🎬 Video Converter - Tüm Araçlar</title>
     <meta name="description" content="MP4→MP3 / MP3→MP4 / MOV→MP4 / Reverse Video / Mirror Flip / Audio Extract - Tamamen tarayıcınızda çalışır">
     <style>
-        :root {
-            --primary: #3b82f6;
-            --primary-dark: #2563eb;
-            --secondary: #64748b;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --error: #ef4444;
-            --bg: #f8fafc;
-            --card: #ffffff;
-            --text: #1e293b;
-            --border: #e2e8f0;
-        }
-
-		* {
-			margin: 0;
-			padding: 0;
-			box-sizing: border-box;
-		}
-
-		body {
-			font-family: 'Segoe UI', system-ui, sans-serif;
-			background: var(--bg);
-			color: var(--text);
-			line-height: 1.6;
-			padding: 20px;
-			min-height: 100vh;
-		}
-
-		.container {
-			max-width: 1400px;
-			margin: 0 auto;
-		}
-
-		header {
-			text-align: center;
-			margin-bottom: 2rem;
-			padding: 2rem 0;
-			border-bottom: 1px solid var(--border);
-		}
-
-		h1 {
-			font-size: 2.5rem;
-			margin-bottom: 0.5rem;
-			background: linear-gradient(135deg, var(--primary), var(--secondary));
-			-webkit-background-clip: text;
-			-webkit-text-fill-color: transparent;
-		}
-
-		.subtitle {
-			color: var(--secondary);
-			font-size: 1.1rem;
-			max-width: 800px;
-			margin: 0 auto;
-		}
-
-		.converter-grid {
-			display: grid;
-			grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-			gap: 1.5rem;
-			margin-bottom: 2rem;
-		}
-
-		.converter-card {
-			background: var(--card);
-			border-radius: 12px;
-			padding: 1.5rem;
-			box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-			border: 1px solid var(--border);
-			transition: transform 0.2s, box-shadow 0.2s;
-			display: flex;
-			flex-direction: column;
-		}
-
-		.converter-card:hover {
-			transform: translateY(-2px);
-			box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.1);
-		}
-
-		.card-header {
-			display: flex;
-			align-items: center;
-			gap: 0.75rem;
-			margin-bottom: 1rem;
-			padding-bottom: 0.75rem;
-			border-bottom: 1px solid #f1f5f9;
-		}
-
-		.card-icon {
-			width: 24px;
-			height: 24px;
-			color: var(--primary);
-		}
-
-		.card-title {
-			font-size: 1.25rem;
-			font-weight: 600;
-		}
-
-		.card-description {
-			color: var(--secondary);
-			margin-bottom: 1.5rem;
-			flex-grow: 1;
-		}
-
-		.file-input-area {
-			border: 2px dashed #cbd5e1;
-			border-radius: 8px;
-			padding: 2rem;
-			text-align: center;
-			margin-bottom: 1rem;
-			transition: border-color 0.2s;
-			cursor: pointer;
-			flex-grow: 1;
-			display: flex;
-			flex-direction: column;
-			justify-content: center;
-		}
-
-		.file-input-area:hover {
-			border-color: var(--primary);
-		}
-
-		.file-input-area.dragover {
-			border-color: var(--primary);
-			background: #f0f9ff;
-		}
-
-		.file-inputs {
-			display: flex;
-			flex-direction: column;
-			gap: 1rem;
-			margin-bottom: 1rem;
-		}
-
-		.file-input-group {
-			display: flex;
-			flex-direction: column;
-			gap: 0.5rem;
-		}
-
-		.file-input-label {
-			font-weight: 500;
-			font-size: 0.9rem;
-		}
-
-		.btn {
-			background: var(--primary);
-			color: white;
-			border: none;
-			padding: 0.75rem 1.5rem;
-			border-radius: 8px;
-			cursor: pointer;
-			font-size: 0.9rem;
-			font-weight: 600;
-			transition: background 0.2s;
-			width: 100%;
-			margin-top: 1rem;
-		}
-
-		.btn:hover {
-			background: var(--primary-dark);
-		}
-
-		.btn:disabled {
-			background: var(--secondary);
-			cursor: not-allowed;
-		}
-
-		.progress-container {
-    /* Genel konteyneri ortalamak için (Eğer gerekiyorsa) */
-    margin: 20px auto; 
-    max-width: 600px; /* Opsiyonel: Genişliği sınırlar */
-    
-    /* İlerleme çubuğunun kendisi */
-    height: 30px;
-    background: var(--border); /* Gri arka plan */
-    border-radius: 6px;
-    overflow: hidden; /* Doldurma çubuğunun dışarı taşmasını engeller */
-    position: relative; /* Metni konumlandırmak için */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-		}
-
-		.progress-bar {
-    height: 100%;
-    width: 0%; /* Başlangıçta 0% */
-    background: var(--primary);
-    border-radius: 6px;
-    transition: width 0.3s ease-in-out; /* Yumuşak geçiş efekti ekler */
-		}
-
-		.progress-fill {
-			height: 100%;
-			background: var(--primary);
-			width: 0%;
-			transition: width 0.3s;
-		}
-
-		.progress-text {
-    /* KRİTİK: Metni ortalamak için */
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%); /* Hem yatay hem dikey ortalama */
-    width: 100%; /* Metnin tüm alanı kaplamasını sağlar */
-    text-align: center;
-    color: var(--text); /* Koyu metin */
-    font-weight: bold;
-    z-index: 10; /* İlerleme çubuğunun üstünde görünmesini sağlar */
-		}
-
-		.status-message {
-			padding: 0.75rem;
-			border-radius: 6px;
-			margin: 1rem 0;
-			font-size: 0.9rem;
-		}
-
-		.status-success {
-			background: #f0fdf4;
-			color: var(--success);
-			border: 1px solid #bbf7d0;
-		}
-
-		.status-error {
-			background: #fef2f2;
-			color: var(--error);
-			border: 1px solid #fecaca;
-		}
-
-		.status-info {
-			background: #f0f9ff;
-			color: var(--primary);
-			border: 1px solid #bae6fd;
-		}
-
-		.status-warning {
-			background: #fffbeb;
-			color: var(--warning);
-			border: 1px solid #fed7aa;
-		}
-
-		.tabs {
-			display: flex;
-			margin-bottom: 1.5rem;
-			border-bottom: 1px solid var(--border);
-			overflow-x: auto;
-		}
-
-		.tab {
-			padding: 0.75rem 1.5rem;
-			background: none;
-			border: none;
-			cursor: pointer;
-			font-weight: 500;
-			color: var(--secondary);
-			border-bottom: 2px solid transparent;
-			white-space: nowrap;
-		}
-
-		.tab.active {
-			color: var(--primary);
-			border-bottom: 2px solid var(--primary);
-		}
-
-		.tab-content {
-			display: none;
-		}
-
-		.tab-content.active {
-			display: block;
-		}
-
-		footer {
-			text-align: center;
-			margin-top: 3rem;
-			padding: 2rem 0;
-			color: var(--secondary);
-			font-size: 0.9rem;
-			border-top: 1px solid var(--border);
-		}
-
-		.global-status {
-			position: fixed;
-			top: 20px;
-			right: 20px;
-			z-index: 1000;
-			max-width: 400px;
-		}
-
-		.file-list {
-			margin: 1rem 0;
-			max-height: 200px;
-			overflow-y: auto;
-			border: 1px solid var(--border);
-			border-radius: 6px;
-			padding: 0.5rem;
-		}
-
-		.file-item {
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			padding: 0.5rem;
-			border-bottom: 1px solid var(--border);
-		}
-
-		.file-item:last-child {
-			border-bottom: none;
-		}
-
-		.logger {
-			background: #1e293b;
-			color: #e2e8f0;
-			padding: 1rem;
-			border-radius: 6px;
-			margin-top: 1rem;
-			font-family: monospace;
-			font-size: 0.8rem;
-			max-height: 200px;
-			overflow-y: auto;
-		}
-
-		.log-entry {
-			margin-bottom: 0.25rem;
-			padding: 0.25rem 0;
-		}
-
-		.log-success {
-			color: #10b981;
-		}
-
-		.log-error {
-			color: #ef4444;
-		}
-
-		.log-info {
-			color: #3b82f6;
-		}
-
-		.log-warning {
-			color: #f59e0b;
-		}
-
-		@media (max-width: 768px) {
-			.converter-grid {
-				grid-template-columns: 1fr;
-			}
-			
-			h1 {
-				font-size: 2rem;
-			}
-			
-			.tabs {
-				flex-wrap: wrap;
-			}
-			
-			.tab {
-				flex: 1;
-				min-width: 120px;
-				text-align: center;
-			}
-		}
+        .status-message { color: #333; font-weight: bold; margin: 10px 0; }
+        .status-message.error { color: red; }
+        .status-message.success { color: green; }
+        #ffmpeg-progress-container { display: block; margin: 20px 0; }
+        #ffmpeg-progress-fill { height: 20px; background: #4CAF50; transition: width 0.3s; width: 0%; }
+        #ffmpeg-progress-text { margin-top: 5px; }
+        section { margin-bottom: 20px; }
+        button { margin-top: 10px; padding: 8px 16px; }
+        ul { list-style: none; padding: 0; }
+        li { margin: 5px 0; }
     </style>
-    <!-- FFmpeg.js kütüphanesini CDN üzerinden ekle -->
+    <script src="ffmpeg/index.js"></script>
     <script src="ffmpeg/ffmpeg.min.js"></script>
-	<script src="ffmpeg/index.js"></script> <!-- toBlobURL için -->
 </head>
 <body>
     <h1>🎬 Video Converter - Tüm Araçlar</h1>
     <p>MP4→MP3 / MP3→MP4 / MOV→MP4 / Reverse Video / Mirror Flip / Audio Extract - Tamamen tarayıcınızda çalışır</p>
-
-    <!-- FFmpeg yükleme durumu -->
+    
     <div id="ffmpeg-status" class="status-message">FFmpeg yükleniyor...</div>
+    <div id="ffmpeg-progress-container">
+        <div id="ffmpeg-progress-fill"></div>
+        <div id="ffmpeg-progress-text"></div>
+    </div>
+    <div id="globalStatus" class="status-message" style="display: none;"></div>
 
-    <!-- Araçlar Menüsü -->
-    <div>
+    <nav>
         <a href="#mp4-to-mp3">MP4 → MP3</a> |
         <a href="#mp3-to-mp4">MP3 → MP4</a> |
         <a href="#mov-to-mp4">MOV → MP4</a> |
         <a href="#video-reverse">Video Reverse</a> |
         <a href="#video-mirror">Video Mirror</a> |
         <a href="#mp3-to-mp4-image">MP3 → MP4 (Resimli)</a>
-    </div>
+    </nav>
 
-    <!-- MP4 → MP3 -->
-    <div id="mp4-to-mp3" class="tool-section">
+    <section id="mp4-to-mp3">
         <h2>MP4 → MP3</h2>
         <p>MP4 videolardan ses çıkararak MP3 formatına dönüştürür</p>
-        <div class="file-input">
-            <label>Dosya Seçin:</label><br>
-            <input type="file" id="mp4-to-mp3-input" accept=".mp4" multiple>
-            <p>🎥 MP4 dosyasını buraya sürükleyin veya tıklayın</p>
-        </div>
-        <div>
-            <strong>Seçilen Dosyalar:</strong>
-            <ul id="mp4-to-mp3-files"></ul>
-        </div>
-        <button id="mp4-to-mp3-btn" disabled>MP3'e Dönüştür</button>
-        <div id="mp4-to-mp3-progress" class="status-message" style="display: none;">İşleniyor...</div>
-    </div>
+        <label>Dosya Seçin:</label>
+        <input type="file" id="mp4tomp3Input" accept=".mp4" multiple>
+        <p>🎥 MP4 dosyasını buraya sürükleyin veya tıklayın</p>
+        <strong>Seçilen Dosyalar:</strong>
+        <ul id="mp4tomp3Files"></ul>
+        <button id="mp4tomp3Btn" disabled>MP3'e Dönüştür</button>
+        <div id="mp4tomp3Progress" class="status-message" style="display: none;">İşleniyor...</div>
+        <div id="mp4tomp3ProgressFill" style="height: 20px; background: #4CAF50; width: 0%;"></div>
+        <div id="mp4tomp3ProgressText"></div>
+    </section>
 
-    <!-- MP3 → MP4 -->
-    <div id="mp3-to-mp4" class="tool-section">
+    <section id="mp3-to-mp4">
         <h2>MP3 → MP4</h2>
         <p>MP3 dosyalarını kapak resimli MP4 videolara dönüştürür</p>
-        <div class="file-input">
-            <label>MP3 Dosyası:</label><br>
-            <input type="file" id="mp3-to-mp4-audio" accept=".mp3" multiple>
-            <p>🎵 MP3 dosyasını seçin</p>
-        </div>
-        <div class="file-input">
-            <label>Kapak Resmi (opsiyonel):</label><br>
-            <input type="file" id="mp3-to-mp4-image" accept=".jpg,.jpeg,.png">
-            <p>🖼️ Resim dosyasını seçin (JPEG/PNG)</p>
-        </div>
-        <div>
-            <strong>Seçilen MP3 Dosyaları:</strong>
-            <ul id="mp3-to-mp4-files"></ul>
-        </div>
-        <button id="mp3-to-mp4-btn" disabled>MP4'e Dönüştür</button>
-        <div id="mp3-to-mp4-progress" class="status-message" style="display: none;">İşleniyor...</div>
-    </div>
+        <label>MP3 Dosyası:</label>
+        <input type="file" id="mp3tomp4AudioInput" accept=".mp3" multiple>
+        <p>🎵 MP3 dosyasını seçin</p>
+        <label>Kapak Resmi (opsiyonel):</label>
+        <input type="file" id="mp3tomp4ImageInput" accept=".jpg,.jpeg,.png">
+        <p>🖼️ Resim dosyasını seçin (JPEG/PNG)</p>
+        <strong>Seçilen MP3 Dosyaları:</strong>
+        <ul id="mp3tomp4Files"></ul>
+        <button id="mp3tomp4Btn" disabled>MP4'e Dönüştür</button>
+        <div id="mp3tomp4Progress" class="status-message" style="display: none;">İşleniyor...</div>
+        <div id="mp3tomp4ProgressFill" style="height: 20px; background: #4CAF50; width: 0%;"></div>
+        <div id="mp3tomp4ProgressText"></div>
+    </section>
 
-    <!-- MOV → MP4 -->
-    <div id="mov-to-mp4" class="tool-section">
+    <section id="mov-to-mp4">
         <h2>MOV → MP4</h2>
         <p>MOV dosyalarını MP4 formatına dönüştürür</p>
-        <div class="file-input">
-            <label>Dosya Seçin:</label><br>
-            <input type="file" id="mov-to-mp4-input" accept=".mov" multiple>
-            <p>🎬 MOV dosyasını buraya sürükleyin veya tıklayın</p>
-        </div>
-        <div>
-            <strong>Seçilen Dosyalar:</strong>
-            <ul id="mov-to-mp4-files"></ul>
-        </div>
-        <button id="mov-to-mp4-btn" disabled>MP4'e Dönüştür</button>
-        <div id="mov-to-mp4-progress" class="status-message" style="display: none;">İşleniyor...</div>
-    </div>
+        <label>Dosya Seçin:</label>
+        <input type="file" id="movtomp4Input" accept=".mov" multiple>
+        <p>🎬 MOV dosyasını buraya sürükleyin veya tıklayın</p>
+        <strong>Seçilen Dosyalar:</strong>
+        <ul id="movtomp4Files"></ul>
+        <button id="movtomp4Btn" disabled>MP4'e Dönüştür</button>
+        <div id="movtomp4Progress" class="status-message" style="display: none;">İşleniyor...</div>
+        <div id="movtomp4ProgressFill" style="height: 20px; background: #4CAF50; width: 0%;"></div>
+        <div id="movtomp4ProgressText"></div>
+    </section>
 
-    <!-- Video Reverse -->
-    <div id="video-reverse" class="tool-section">
+    <section id="video-reverse">
         <h2>Video Reverse</h2>
         <p>Videoları ve sesi ters çevirir, dosya adını da tersine çevirir</p>
-        <div class="file-input">
-            <label>Dosya Seçin:</label><br>
-            <input type="file" id="video-reverse-input" accept=".mp4,.mov" multiple>
-            <p>⏪ Video dosyasını buraya sürükleyin veya tıklayın</p>
-        </div>
-        <div>
-            <strong>Seçilen Dosyalar:</strong>
-            <ul id="video-reverse-files"></ul>
-        </div>
-        <button id="video-reverse-btn" disabled>Ters Çevir</button>
-        <div id="video-reverse-progress" class="status-message" style="display: none;">İşleniyor...</div>
-    </div>
+        <label>Dosya Seçin:</label>
+        <input type="file" id="invertmp4Input" accept=".mp4,.mov" multiple>
+        <p>⏪ Video dosyasını buraya sürükleyin veya tıklayın</p>
+        <strong>Seçilen Dosyalar:</strong>
+        <ul id="invertmp4Files"></ul>
+        <button id="invertmp4Btn" disabled>Ters Çevir</button>
+        <div id="invertmp4Progress" class="status-message" style="display: none;">İşleniyor...</div>
+        <div id="invertmp4ProgressFill" style="height: 20px; background: #4CAF50; width: 0%;"></div>
+        <div id="invertmp4ProgressText"></div>
+    </section>
 
-    <!-- Video Mirror -->
-    <div id="video-mirror" class="tool-section">
+    <section id="video-mirror">
         <h2>Video Mirror</h2>
         <p>Video görüntüsünü yatay olarak ayna efekti uygular</p>
-        <div class="file-input">
-            <label>Dosya Seçin:</label><br>
-            <input type="file" id="video-mirror-input" accept=".mp4,.mov" multiple>
-            <p>🪞 Video dosyasını buraya sürükleyin veya tıklayın</p>
-        </div>
-        <div>
-            <strong>Seçilen Dosyalar:</strong>
-            <ul id="video-mirror-files"></ul>
-        </div>
-        <button id="video-mirror-btn" disabled>Ayna Efekti Uygula</button>
-        <div id="video-mirror-progress" class="status-message" style="display: none;">İşleniyor...</div>
-    </div>
+        <label>Dosya Seçin:</label>
+        <input type="file" id="flipmp4Input" accept=".mp4,.mov" multiple>
+        <p>🪞 Video dosyasını buraya sürükleyin veya tıklayın</p>
+        <strong>Seçilen Dosyalar:</strong>
+        <ul id="flipmp4Files"></ul>
+        <button id="flipmp4Btn" disabled>Ayna Efekti Uygula</button>
+        <div id="flipmp4Progress" class="status-message" style="display: none;">İşleniyor...</div>
+        <div id="flipmp4ProgressFill" style="height: 20px; background: #4CAF50; width: 0%;"></div>
+        <div id="flipmp4ProgressText"></div>
+    </section>
 
-    <!-- MP3 → MP4 (Resimli) -->
-    <div id="mp3-to-mp4-image" class="tool-section">
+    <section id="mp3-to-mp4-image">
         <h2>MP3 → MP4 (Resimli)</h2>
         <p>MP3'leri sabit resim arka planlı MP4'lere dönüştürür</p>
-        <div class="file-input">
-            <label>MP3 Dosyası:</label><br>
-            <input type="file" id="mp3-to-mp4-image-audio" accept=".mp3" multiple>
-            <p>🎵 MP3 dosyasını seçin</p>
-        </div>
-        <div class="file-input">
-            <label>Arka Plan Resmi:</label><br>
-            <input type="file" id="mp3-to-mp4-image-img" accept=".jpg,.jpeg,.png">
-            <p>🖼️ Resim dosyasını seçin (JPEG/PNG)</p>
-        </div>
-        <div>
-            <strong>Seçilen MP3 Dosyaları:</strong>
-            <ul id="mp3-to-mp4-image-files"></ul>
-        </div>
-        <button id="mp3-to-mp4-image-btn" disabled>MP4'e Dönüştür</button>
-        <div id="mp3-to-mp4-image-progress" class="status-message" style="display: none;">İşleniyor...</div>
-    </div>
+        <label>MP3 Dosyası:</label>
+        <input type="file" id="mp3tomp4jAudioInput" accept=".mp3" multiple>
+        <p>🎵 MP3 dosyasını seçin</p>
+        <label>Arka Plan Resmi:</label>
+        <input type="file" id="mp3tomp4jImageInput" accept=".jpg,.jpeg,.png">
+        <p>🖼️ Resim dosyasını seçin (JPEG/PNG)</p>
+        <strong>Seçilen MP3 Dosyaları:</strong>
+        <ul id="mp3tomp4jFiles"></ul>
+        <button id="mp3tomp4jBtn" disabled>MP4'e Dönüştür</button>
+        <div id="mp3tomp4jProgress" class="status-message" style="display: none;">İşleniyor...</div>
+        <div id="mp3tomp4jProgressFill" style="height: 20px; background: #4CAF50; width: 0%;"></div>
+        <div id="mp3tomp4jProgressText"></div>
+    </section>
 
-    <!-- Footer -->
     <footer>
-        <p>© 2025 Video Converter - Tamamen tarayıcınızda çalışır. Hiçbir sunucuya veri gönderilmez.</p>
-        <p>FFmpeg.js kullanılarak geliştirilmiştir</p>
+        © 2025 Video Converter - Tamamen tarayıcınızda çalışır. Hiçbir sunucuya veri gönderilmez.
+        <br>FFmpeg.js kullanılarak geliştirilmiştir
     </footer>
 
-    <!-- JavaScript dosyasını ekle -->
     <script src="converter.js"></script>
-    <script src="ffmpeg-handler.js"></script>
 </body>
 </html>
