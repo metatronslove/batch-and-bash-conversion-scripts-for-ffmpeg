@@ -376,7 +376,6 @@ async function initFFmpeg() {
         
         ffmpeg.on('log', ({ message }) => {
             console.log('FFmpeg log:', message);
-            // showGlobalStatus(message, 'info');
         });
 
         ffmpeg.on('progress', ({ progress, time }) => {
