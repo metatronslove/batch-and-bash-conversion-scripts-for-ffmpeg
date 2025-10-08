@@ -1,1614 +1,201 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Video Converter - Tüm Dönüşüm Araçları</title>
-	<style>
-        :root {
-            --primary: #3b82f6;
-            --primary-dark: #2563eb;
-            --secondary: #64748b;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --error: #ef4444;
-            --bg: #f8fafc;
-            --card: #ffffff;
-            --text: #1e293b;
-            --border: #e2e8f0;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎬 Video Converter - Tüm Araçlar</title>
+    <meta name="description" content="MP4→MP3 / MP3→MP4 / MOV→MP4 / Reverse Video / Mirror Flip / Audio Extract - Tamamen tarayıcınızda çalışır">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
         }
-
-		* {
-			margin: 0;
-			padding: 0;
-			box-sizing: border-box;
-		}
-
-		body {
-			font-family: 'Segoe UI', system-ui, sans-serif;
-			background: var(--bg);
-			color: var(--text);
-			line-height: 1.6;
-			padding: 20px;
-			min-height: 100vh;
-		}
-
-		.container {
-			max-width: 1400px;
-			margin: 0 auto;
-		}
-
-		header {
-			text-align: center;
-			margin-bottom: 2rem;
-			padding: 2rem 0;
-			border-bottom: 1px solid var(--border);
-		}
-
-		h1 {
-			font-size: 2.5rem;
-			margin-bottom: 0.5rem;
-			background: linear-gradient(135deg, var(--primary), var(--secondary));
-			-webkit-background-clip: text;
-			-webkit-text-fill-color: transparent;
-		}
-
-		.subtitle {
-			color: var(--secondary);
-			font-size: 1.1rem;
-			max-width: 800px;
-			margin: 0 auto;
-		}
-
-		.converter-grid {
-			display: grid;
-			grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-			gap: 1.5rem;
-			margin-bottom: 2rem;
-		}
-
-		.converter-card {
-			background: var(--card);
-			border-radius: 12px;
-			padding: 1.5rem;
-			box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-			border: 1px solid var(--border);
-			transition: transform 0.2s, box-shadow 0.2s;
-			display: flex;
-			flex-direction: column;
-		}
-
-		.converter-card:hover {
-			transform: translateY(-2px);
-			box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.1);
-		}
-
-		.card-header {
-			display: flex;
-			align-items: center;
-			gap: 0.75rem;
-			margin-bottom: 1rem;
-			padding-bottom: 0.75rem;
-			border-bottom: 1px solid #f1f5f9;
-		}
-
-		.card-icon {
-			width: 24px;
-			height: 24px;
-			color: var(--primary);
-		}
-
-		.card-title {
-			font-size: 1.25rem;
-			font-weight: 600;
-		}
-
-		.card-description {
-			color: var(--secondary);
-			margin-bottom: 1.5rem;
-			flex-grow: 1;
-		}
-
-		.file-input-area {
-			border: 2px dashed #cbd5e1;
-			border-radius: 8px;
-			padding: 2rem;
-			text-align: center;
-			margin-bottom: 1rem;
-			transition: border-color 0.2s;
-			cursor: pointer;
-			flex-grow: 1;
-			display: flex;
-			flex-direction: column;
-			justify-content: center;
-		}
-
-		.file-input-area:hover {
-			border-color: var(--primary);
-		}
-
-		.file-input-area.dragover {
-			border-color: var(--primary);
-			background: #f0f9ff;
-		}
-
-		.file-inputs {
-			display: flex;
-			flex-direction: column;
-			gap: 1rem;
-			margin-bottom: 1rem;
-		}
-
-		.file-input-group {
-			display: flex;
-			flex-direction: column;
-			gap: 0.5rem;
-		}
-
-		.file-input-label {
-			font-weight: 500;
-			font-size: 0.9rem;
-		}
-
-		.btn {
-			background: var(--primary);
-			color: white;
-			border: none;
-			padding: 0.75rem 1.5rem;
-			border-radius: 8px;
-			cursor: pointer;
-			font-size: 0.9rem;
-			font-weight: 600;
-			transition: background 0.2s;
-			width: 100%;
-			margin-top: 1rem;
-		}
-
-		.btn:hover {
-			background: var(--primary-dark);
-		}
-
-		.btn:disabled {
-			background: var(--secondary);
-			cursor: not-allowed;
-		}
-
-		.progress-container {
-			margin: 20px auto;
-			max-width: 600px;
-			height: 30px;
-			background: var(--border);
-			border-radius: 6px;
-			overflow: hidden;
-			position: relative;
-			box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-		}
-
-		.progress-bar {
-			height: 100%;
-			width: 0%;
-			background: var(--primary);
-			border-radius: 6px;
-			transition: width 0.3s ease-in-out;
-		}
-
-		.progress-text {
-			position: absolute;
-			top: 50%;
-			left: 50%;
-			transform: translate(-50%, -50%);
-			width: 100%;
-			text-align: center;
-			color: var(--text);
-			font-weight: bold;
-			z-index: 10;
-		}
-
-		.status-message {
-			padding: 0.75rem;
-			border-radius: 6px;
-			margin: 1rem 0;
-			font-size: 0.9rem;
-		}
-
-		.status-success {
-			background: #f0fdf4;
-			color: var(--success);
-			border: 1px solid #bbf7d0;
-		}
-
-		.status-error {
-			background: #fef2f2;
-			color: var(--error);
-			border: 1px solid #fecaca;
-		}
-
-		.status-info {
-			background: #f0f9ff;
-			color: var(--primary);
-			border: 1px solid #bae6fd;
-		}
-
-		.status-warning {
-			background: #fffbeb;
-			color: var(--warning);
-			border: 1px solid #fed7aa;
-		}
-
-		.tabs {
-			display: flex;
-			margin-bottom: 1.5rem;
-			border-bottom: 1px solid var(--border);
-			overflow-x: auto;
-		}
-
-		.tab {
-			padding: 0.75rem 1.5rem;
-			background: none;
-			border: none;
-			cursor: pointer;
-			font-weight: 500;
-			color: var(--secondary);
-			border-bottom: 2px solid transparent;
-			white-space: nowrap;
-		}
-
-		.tab.active {
-			color: var(--primary);
-			border-bottom: 2px solid var(--primary);
-		}
-
-		.tab-content {
-			display: none;
-		}
-
-		.tab-content.active {
-			display: block;
-		}
-
-		footer {
-			text-align: center;
-			margin-top: 3rem;
-			padding: 2rem 0;
-			color: var(--secondary);
-			font-size: 0.9rem;
-			border-top: 1px solid var(--border);
-		}
-
-		.global-status {
-			position: fixed;
-			top: 20px;
-			right: 20px;
-			z-index: 1000;
-			max-width: 400px;
-		}
-
-		.file-list {
-			margin: 1rem 0;
-			max-height: 200px;
-			overflow-y: auto;
-			border: 1px solid var(--border);
-			border-radius: 6px;
-			padding: 0.5rem;
-		}
-
-		.file-item {
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			padding: 0.5rem;
-			border-bottom: 1px solid var(--border);
-		}
-
-		.file-item:last-child {
-			border-bottom: none;
-		}
-
-		.logger {
-			background: #1e293b;
-			color: #e2e8f0;
-			padding: 1rem;
-			border-radius: 6px;
-			margin-top: 1rem;
-			font-family: monospace;
-			font-size: 0.8rem;
-			max-height: 200px;
-			overflow-y: auto;
-		}
-
-		.log-entry {
-			margin-bottom: 0.25rem;
-			padding: 0.25rem 0;
-		}
-
-		.log-success {
-			color: #10b981;
-		}
-
-		.log-error {
-			color: #ef4444;
-		}
-
-		.log-info {
-			color: #3b82f6;
-		}
-
-		.log-warning {
-			color: #f59e0b;
-		}
-
-		@media (max-width: 768px) {
-			.converter-grid {
-				grid-template-columns: 1fr;
-			}
-			
-			h1 {
-				font-size: 2rem;
-			}
-			
-			.tabs {
-				flex-wrap: wrap;
-			}
-			
-			.tab {
-				flex: 1;
-				min-width: 120px;
-				text-align: center;
-			}
-		}
-	</style>	
-	<!-- FFmpeg.js CDN -->
-	<script src="ffmpeg/ffmpeg.js"></script>
+        .status-message {
+            color: #333;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .status-message.error {
+            color: red;
+        }
+        .tool-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .tool-section h2 {
+            margin-top: 0;
+        }
+        .file-input {
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }        
+    .status-message { color: #333; font-weight: bold; margin: 10px 0; }
+    .status-message.error { color: red; }
+    .status-message.success { color: green; }
+    #ffmpeg-progress-container { display: block; margin: 20px 0; }
+    #ffmpeg-progress-fill { height: 20px; background: #4CAF50; transition: width 0.3s; }
+    #ffmpeg-progress-text { margin-top: 5px; }
+    </style>
+    <!-- FFmpeg.js kütüphanesini CDN üzerinden ekle -->
+    <script src="ffmpeg/ffmpeg.min.js"></script>
+	<script src="ffmpeg/index.js"></script> <!-- toBlobURL için -->
 </head>
 <body>
-	<div class="container">
-		<header>
-			<h1>🎬 Video Converter - Tüm Araçlar</h1>
-			<p class="subtitle">MP4→MP3 / MP3→MP4 / MOV→MP4 / Reverse Video / Mirror Flip / Audio Extract - Tamamen tarayıcınızda çalışır</p>
-		</header>
-		
-		<div id="ffmpeg-progress-container" class="progress-container">
-			<div id="ffmpeg-progress-fill" class="progress-bar"></div>
-			<div id="ffmpeg-progress-text" class="progress-text">FFmpeg yükleniyor...</div>
-		</div>
-
-		<div class="tabs">
-			<button class="tab active" data-tab="mp4tomp3">MP4 → MP3</button>
-			<button class="tab" data-tab="mp3tomp4">MP3 → MP4</button>
-			<button class="tab" data-tab="movtomp4">MOV → MP4</button>
-			<button class="tab" data-tab="invertmp4">Video Reverse</button>
-			<button class="tab" data-tab="flipmp4">Video Mirror</button>
-			<button class="tab" data-tab="mp3tomp4j">MP3 → MP4 (Resimli)</button>
-		</div>
-
-		<!-- MP4 to MP3 -->
-		<div class="tab-content active" id="mp4tomp3">
-			<div class="converter-card">
-				<div class="card-header">
-					<svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
-					</svg>
-					<h3 class="card-title">MP4 → MP3</h3>
-				</div>
-				<p class="card-description">MP4 videolardan ses çıkararak MP3 formatına dönüştürür</p>
-				
-				<div class="file-inputs">
-					<div class="file-input-group">
-						<label class="file-input-label">Dosya Seçin:</label>
-						<div class="file-input-area" id="mp4tomp3Area">
-							<p>🎥 MP4 dosyasını buraya sürükleyin veya tıklayın</p>
-							<input type="file" id="mp4tomp3Input" accept=".mp4,.avi,.mov,.mkv,.webm" style="display: none;" multiple>
-						</div>
-					</div>
-				</div>
-
-				<div class="file-list" id="mp4tomp3FileList" style="display: none;">
-					<h4>Seçilen Dosyalar:</h4>
-					<div id="mp4tomp3Files"></div>
-				</div>
-				
-				<button class="btn" id="mp4tomp3Btn" disabled>MP3'e Dönüştür</button>
-				
-				<div class="progress-container" style="display: none;" id="mp4tomp3Progress">
-					<div class="progress-bar" id="mp4tomp3ProgressFill"></div>
-					<p class="progress-text" id="mp4tomp3ProgressText">İşleniyor...</p>
-				</div>
-				
-				<div class="logger" id="mp4tomp3Logger"></div>
-			</div>
-		</div>
-
-		<!-- MP3 to MP4 -->
-		<div class="tab-content" id="mp3tomp4">
-			<div class="converter-card">
-				<div class="card-header">
-					<svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-					</svg>
-					<h3 class="card-title">MP3 → MP4</h3>
-				</div>
-				<p class="card-description">MP3 dosyalarını kapak resimli MP4 videolara dönüştürür</p>
-				
-				<div class="file-inputs">
-					<div class="file-input-group">
-						<label class="file-input-label">MP3 Dosyası:</label>
-						<div class="file-input-area" id="mp3tomp4AudioArea">
-							<p>🎵 MP3 dosyasını seçin</p>
-							<input type="file" id="mp3tomp4AudioInput" accept=".mp3" style="display: none;" multiple>
-						</div>
-					</div>
-					
-					<div class="file-input-group">
-						<label class="file-input-label">Kapak Resmi (opsiyonel):</label>
-						<div class="file-input-area" id="mp3tomp4ImageArea">
-							<p>🖼️ Resim dosyasını seçin (JPEG/PNG)</p>
-							<input type="file" id="mp3tomp4ImageInput" accept=".jpg,.jpeg,.png" style="display: none;">
-						</div>
-					</div>
-				</div>
-
-				<div class="file-list" id="mp3tomp4FileList" style="display: none;">
-					<h4>Seçilen MP3 Dosyaları:</h4>
-					<div id="mp3tomp4Files"></div>
-				</div>
-				
-				<button class="btn" id="mp3tomp4Btn" disabled>MP4'e Dönüştür</button>
-				
-				<div class="progress-container" style="display: none;" id="mp3tomp4Progress">
-					<div class="progress-bar" id="mp3tomp4ProgressFill"></div>
-					<p class="progress-text" id="mp3tomp4ProgressText">İşleniyor...</p>
-				</div>
-				
-				<div class="logger" id="mp3tomp4Logger"></div>
-			</div>
-		</div>
-
-		<!-- MOV to MP4 -->
-		<div class="tab-content" id="movtomp4">
-			<div class="converter-card">
-				<div class="card-header">
-					<svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-					</svg>
-					<h3 class="card-title">MOV → MP4</h3>
-				</div>
-				<p class="card-description">MOV dosyalarını MP4 formatına dönüştürür</p>
-				
-				<div class="file-inputs">
-					<div class="file-input-group">
-						<label class="file-input-label">Dosya Seçin:</label>
-						<div class="file-input-area" id="movtomp4Area">
-							<p>🎬 MOV dosyasını buraya sürükleyin veya tıklayın</p>
-							<input type="file" id="movtomp4Input" accept=".mov,.avi,.mkv,.webm" style="display: none;" multiple>
-						</div>
-					</div>
-				</div>
-
-				<div class="file-list" id="movtomp4FileList" style="display: none;">
-					<h4>Seçilen Dosyalar:</h4>
-					<div id="movtomp4Files"></div>
-				</div>
-				
-				<button class="btn" id="movtomp4Btn" disabled>MP4'e Dönüştür</button>
-				
-				<div class="progress-container" style="display: none;" id="movtomp4Progress">
-					<div class="progress-bar" id="movtomp4ProgressFill"></div>
-					<p class="progress-text" id="movtomp4ProgressText">İşleniyor...</p>
-				</div>
-				
-				<div class="logger" id="movtomp4Logger"></div>
-			</div>
-		</div>
-
-		<!-- Invert MP4 -->
-		<div class="tab-content" id="invertmp4">
-			<div class="converter-card">
-				<div class="card-header">
-					<svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-					</svg>
-					<h3 class="card-title">Video Reverse</h3>
-				</div>
-				<p class="card-description">Videoları ve sesi ters çevirir, dosya adını da tersine çevirir</p>
-				
-				<div class="file-inputs">
-					<div class="file-input-group">
-						<label class="file-input-label">Dosya Seçin:</label>
-						<div class="file-input-area" id="invertmp4Area">
-							<p>⏪ Video dosyasını buraya sürükleyin veya tıklayın</p>
-							<input type="file" id="invertmp4Input" accept=".mp4,.mov,.avi,.mkv,.webm" style="display: none;" multiple>
-						</div>
-					</div>
-				</div>
-
-				<div class="file-list" id="invertmp4FileList" style="display: none;">
-					<h4>Seçilen Dosyalar:</h4>
-					<div id="invertmp4Files"></div>
-				</div>
-				
-				<button class="btn" id="invertmp4Btn" disabled>Ters Çevir</button>
-				
-				<div class="progress-container" style="display: none;" id="invertmp4Progress">
-					<div class="progress-bar" id="invertmp4ProgressFill"></div>
-					<p class="progress-text" id="invertmp4ProgressText">İşleniyor...</p>
-				</div>
-				
-				<div class="logger" id="invertmp4Logger"></div>
-			</div>
-		</div>
-
-		<!-- Flip MP4 -->
-		<div class="tab-content" id="flipmp4">
-			<div class="converter-card">
-				<div class="card-header">
-					<svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l-4-4m0 0l4-4m-4 4h14a2 2 0 012 2v0a2 2 0 01-2 2H5a2 2 0 01-2-2v0a2 2 0 012-2z"></path>
-					</svg>
-					<h3 class="card-title">Video Mirror</h3>
-				</div>
-				<p class="card-description">Video görüntüsünü yatay olarak ayna efekti uygular</p>
-				
-				<div class="file-inputs">
-					<div class="file-input-group">
-						<label class="file-input-label">Dosya Seçin:</label>
-						<div class="file-input-area" id="flipmp4Area">
-							<p>🪞 Video dosyasını buraya sürükleyin veya tıklayın</p>
-							<input type="file" id="flipmp4Input" accept=".mp4,.mov,.avi,.mkv,.webm" style="display: none;" multiple>
-						</div>
-					</div>
-				</div>
-
-				<div class="file-list" id="flipmp4FileList" style="display: none;">
-					<h4>Seçilen Dosyalar:</h4>
-					<div id="flipmp4Files"></div>
-				</div>
-				
-				<button class="btn" id="flipmp4Btn" disabled>Ayna Efekti Uygula</button>
-				
-				<div class="progress-container" style="display: none;" id="flipmp4Progress">
-					<div class="progress-bar" id="flipmp4ProgressFill"></div>
-					<p class="progress-text" id="flipmp4ProgressText">İşleniyor...</p>
-				</div>
-				
-				<div class="logger" id="flipmp4Logger"></div>
-			</div>
-		</div>
-
-		<!-- MP3 to MP4 with Static Image -->
-		<div class="tab-content" id="mp3tomp4j">
-			<div class="converter-card">
-				<div class="card-header">
-					<svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-					</svg>
-					<h3 class="card-title">MP3 → MP4 (Resimli)</h3>
-				</div>
-				<p class="card-description">MP3'leri sabit resim arka planlı MP4'lere dönüştürür</p>
-				
-				<div class="file-inputs">
-					<div class="file-input-group">
-						<label class="file-input-label">MP3 Dosyası:</label>
-						<div class="file-input-area" id="mp3tomp4jAudioArea">
-							<p>🎵 MP3 dosyasını seçin</p>
-							<input type="file" id="mp3tomp4jAudioInput" accept=".mp3" style="display: none;" multiple>
-						</div>
-					</div>
-					
-					<div class="file-input-group">
-						<label class="file-input-label">Arka Plan Resmi:</label>
-						<div class="file-input-area" id="mp3tomp4jImageArea">
-							<p>🖼️ Resim dosyasını seçin (JPEG/PNG)</p>
-							<input type="file" id="mp3tomp4jImageInput" accept=".jpg,.jpeg,.png" style="display: none;">
-						</div>
-					</div>
-				</div>
-
-				<div class="file-list" id="mp3tomp4jFileList" style="display: none;">
-					<h4>Seçilen MP3 Dosyaları:</h4>
-					<div id="mp3tomp4jFiles"></div>
-				</div>
-				
-				<button class="btn" id="mp3tomp4jBtn" disabled>MP4'e Dönüştür</button>
-				
-				<div class="progress-container" style="display: none;" id="mp3tomp4jProgress">
-					<div class="progress-bar" id="mp3tomp4jProgressFill"></div>
-					<p class="progress-text" id="mp3tomp4jProgressText">İşleniyor...</p>
-				</div>
-				
-				<div class="logger" id="mp3tomp4jLogger"></div>
-			</div>
-		</div>
-
-		<footer>
-			<p>© 2025 Video Converter - Tamamen tarayıcınızda çalışır. Hiçbir sunucuya veri gönderilmez.</p>
-			<p>FFmpeg.js kullanılarak geliştirilmiştir</p>
-		</footer>
-	</div>
-
-	<div class="global-status" id="globalStatus"></div>
-	<script>
-// GitHub Pages için gerekli ayarlar
-if (typeof self.SharedArrayBuffer === 'undefined') {
-    self.SharedArrayBuffer = ArrayBuffer;
-}
-
-let ffmpeg = null;
-let isFFmpegLoaded = false;
-let ffmpegInitializationStarted = false;
-
-// FFmpeg yüklenene kadar bekleyen fonksiyon
-async function waitForFFmpeg() {
-    const maxWaitTime = 99999; // 100 saniye gibi
-    const startTime = Date.now();
-    
-    while (typeof FFmpeg === 'undefined') {
-        if (Date.now() - startTime > maxWaitTime) {
-            throw new Error('FFmpeg kütüphanesi zaman aşımına uğradı');
-        }
-        await new Promise(resolve => setTimeout(resolve, 100));
-    }
-    return FFmpeg;
-}
-
-// Progress bar güncelleme fonksiyonu
-function updateProgressBar(percentage, message = '') {
-    const progressFill = document.getElementById('ffmpeg-progress-fill');
-    const progressText = document.getElementById('ffmpeg-progress-text');
-    
-    if (progressFill) {
-        progressFill.style.width = `${percentage}%`;
-        console.log(`Progress bar güncellendi: ${percentage}%`);
-    }
-    
-    if (progressText && message) {
-        progressText.textContent = message;
-    }
-}
-
-// IndexedDB için yardımcı fonksiyonlar
-const DB_NAME = 'FFmpegCache';
-const DB_VERSION = 1;
-const STORE_NAME = 'wasmCache';
-
-// IndexedDB'yi aç
-function openDB() {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open(DB_NAME, DB_VERSION);
-        
-        request.onerror = () => reject(request.error);
-        request.onsuccess = () => resolve(request.result);
-        
-        request.onupgradeneeded = (event) => {
-            const db = event.target.result;
-            if (!db.objectStoreNames.contains(STORE_NAME)) {
-                db.createObjectStore(STORE_NAME);
-            }
-        };
-    });
-}
-
-// IndexedDB'den veri oku
-async function getFromDB(key) {
-    try {
-        const db = await openDB();
-        return new Promise((resolve, reject) => {
-            const transaction = db.transaction([STORE_NAME], 'readonly');
-            const store = transaction.objectStore(STORE_NAME);
-            const request = store.get(key);
-            
-            request.onerror = () => reject(request.error);
-            request.onsuccess = () => resolve(request.result);
-        });
-    } catch (error) {
-        console.log('DB read error:', error);
-        return null;
-    }
-}
-
-// IndexedDB'ye veri yaz
-async function setToDB(key, value) {
-    try {
-        const db = await openDB();
-        return new Promise((resolve, reject) => {
-            const transaction = db.transaction([STORE_NAME], 'readwrite');
-            const store = transaction.objectStore(STORE_NAME);
-            const request = store.put(value, key);
-            
-            request.onerror = () => reject(request.error);
-            request.onsuccess = () => resolve(request.result);
-        });
-    } catch (error) {
-        console.log('DB write error:', error);
-    }
-}
-
-// Gerçek dosya boyutunu öğren - SİZİN EKLEDİĞİNİZ
-async function getActualFileSize(url) {
-    try {
-        const response = await fetch(url, { method: 'HEAD' });
-        if (response.ok) {
-            const size = parseInt(response.headers.get('Content-Length'));
-            console.log(`Gerçek dosya boyutu: ${size} bytes (${(size/1024/1024).toFixed(2)}MB)`);
-            return size;
-        }
-    } catch (error) {
-        console.log('HEAD isteği başarısız, tahmini boyut kullanılacak:', error);
-    }
-    return 31700000; // Fallback tahmini boyut
-}
-
-// Güncellenmiş download fonksiyonu - SİZİN EKLEDİĞİNİZ
-async function downloadWithResume(url, onProgress) {
-    const CACHE_KEY = `wasm_${btoa(url)}`;
-    
-    // Önce gerçek dosya boyutunu al
-    const totalSize = await getActualFileSize(url);
-    if (!totalSize) {
-        throw new Error('Dosya boyutu alınamadı');
-    }
-    
-    // Cache kontrolü - GERÇEK boyuta göre
-    const cached = await getFromDB(CACHE_KEY);
-    if (cached && cached.length === totalSize) {
-        console.log('Cache\'den yüklendi - tam boyut:', cached.length);
-        onProgress(totalSize, totalSize, 100);
-        return cached;
-    }
-    
-    let existingData = new Uint8Array(0);
-    let startByte = 0;
-    
-    // Kısmi indirme varsa devam et
-    if (cached && cached.length > 0 && cached.length < totalSize) {
-        existingData = cached;
-        startByte = cached.length;
-        console.log(`Kaldığı yerden devam: ${startByte}/${totalSize} bytes`);
-    }
-    
-    return new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open('GET', url, true);
-        xhr.responseType = 'arraybuffer';
-        xhr.timeout = 120000; // 2 dakika
-        
-        if (startByte > 0) {
-            xhr.setRequestHeader('Range', `bytes=${startByte}-`);
-        }
-        
-        let lastSaveTime = 0;
-        let lastLoggedPercent = -1;
-        
-        xhr.onprogress = (event) => {
-            if (event.lengthComputable) {
-                const loaded = startByte + event.loaded;
-                const percentage = Math.round((loaded / totalSize) * 100);
-                
-                // Aynı yüzdeyi tekrar loglamamak için
-                if (percentage !== lastLoggedPercent && percentage % 5 === 0) {
-                    console.log(`İndirme: ${loaded}/${totalSize} (${percentage}%)`);
-                    lastLoggedPercent = percentage;
-                }
-                
-                onProgress(loaded, totalSize, percentage);
-                
-                // Cache'e ara kaydet
-                const currentTime = Date.now();
-                if (currentTime - lastSaveTime > 2000 && xhr.response) {
-                    const currentData = new Uint8Array(startByte + event.loaded);
-                    if (existingData.length > 0) {
-                        currentData.set(existingData);
-                    }
-                    currentData.set(new Uint8Array(xhr.response), startByte);
-                    setToDB(CACHE_KEY, currentData);
-                    lastSaveTime = currentTime;
-                }
-            }
-        };
-        
-        xhr.onload = () => {
-            if (xhr.status === 200 || xhr.status === 206) {
-                let finalData;
-                
-                if (startByte > 0) {
-                    finalData = new Uint8Array(existingData.length + xhr.response.byteLength);
-                    finalData.set(existingData);
-                    finalData.set(new Uint8Array(xhr.response), existingData.length);
-                } else {
-                    finalData = new Uint8Array(xhr.response);
-                }
-                
-                // GERÇEK boyut kontrolü
-                if (finalData.length === totalSize) {
-                    setToDB(CACHE_KEY, finalData);
-                    console.log('✅ İndirme tamamlandı - doğru boyut:', finalData.length);
-                    resolve(finalData);
-                } else {
-                    console.error(`❌ Eksik dosya: ${finalData.length} / ${totalSize} bytes`);
-                    reject(new Error(`Eksik dosya: ${finalData.length} / ${totalSize} bytes`));
-                }
-            } else {
-                reject(new Error(`HTTP hatası: ${xhr.status}`));
-            }
-        };
-        
-        xhr.onerror = () => reject(new Error('İndirme başarısız'));
-        xhr.ontimeout = () => reject(new Error('İndirme zaman aşımı'));
-        
-        xhr.send();
-    });
-}
-
-// Basitleştirilmiş initFFmpeg fonksiyonu
-async function initFFmpeg() {
-    try {
-        showGlobalStatus('FFmpeg yükleniyor...', 'info');
-        console.log('FFmpeg yüklenmeye başlıyor...');
-
-        updateProgressBar(0, 'FFmpeg başlatılıyor...');
-
-        // FFmpeg'in yüklenmesini bekle
-        console.log('FFmpeg kütüphanesi bekleniyor...');
-        const FFmpegLib = await waitForFFmpeg();
-        console.log('FFmpeg kütüphanesi yüklendi:', FFmpegLib);
-
-        // Yeni FFmpeg instance'ı oluştur
-        ffmpeg = new FFmpegLib();
-        
-        // Progress handler ekle
-        ffmpeg.on('progress', ({ progress }) => {
-            const percentage = Math.round(progress * 100);
-            updateProgressBar(percentage, `FFmpeg yükleniyor... ${percentage}%`);
-        });
-
-        console.log('FFmpeg instance oluşturuldu');
-
-        updateProgressBar(30, 'Core bileşenleri yükleniyor...');
-
-        // Core URL'leri
-        const coreURL = 'ffmpeg-core.js';
-        const wasmURL = 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/umd/ffmpeg-core.wasm';
-
-        console.log('Core URL:', coreURL);
-        console.log('WASM URL:', wasmURL);
-
-        updateProgressBar(60, 'FFmpeg core başlatılıyor...');
-
-        // FFmpeg'i başlat
-        await ffmpeg.load({
-            coreURL: coreURL,
-            wasmURL: wasmURL
-        });
-        
-        isFFmpegLoaded = true;
-        console.log('FFmpeg başarıyla yüklendi!');
-        
-        updateProgressBar(100, '✅ Hazır! Artık dönüşüm yapabilirsiniz.');
-        showGlobalStatus('✅ FFmpeg başarıyla yüklendi! Artık dönüşüm yapabilirsiniz.', 'success');
-
-        // Butonları etkinleştir
-        enableAllButtons();
-
-        setTimeout(() => {
-            const progressContainer = document.getElementById('ffmpeg-progress-container');
-            if (progressContainer) {
-                progressContainer.style.display = 'none';
-            }
-        }, 3000);
-
-    } catch (error) {
-        console.error('FFmpeg yükleme hatası:', error);
-        
-        updateProgressBar(100, '❌ Yükleme başarısız!');
-        
-        let errorMessage = 'FFmpeg yüklenirken hata oluştu. Lütfen sayfayı yenileyin.';
-        
-        if (error && error.message) {
-            errorMessage += ' Hata: ' + error.message;
-        }
-        
-        showGlobalStatus(errorMessage, 'error');
-        disableAllButtons();
-    }
-}
-
-// Tüm butonları devre dışı bırakan fonksiyon
-function disableAllButtons() {
-    const buttons = [
-        'mp4tomp3Btn', 'mp3tomp4Btn', 'movtomp4Btn', 
-        'invertmp4Btn', 'flipmp4Btn', 'mp3tomp4jBtn'
-    ];
-    
-    buttons.forEach(btnId => {
-        const btn = document.getElementById(btnId);
-        if (btn) {
-            btn.disabled = true;
-            btn.textContent = 'FFmpeg Yüklenemedi';
-        }
-    });
-}
-
-function showGlobalStatus(message, type) {
-    const globalStatus = document.getElementById('globalStatus');
-    globalStatus.innerHTML = `<div class="status-message status-${type}">${message}</div>`;
-    globalStatus.style.display = 'block';
-    setTimeout(() => { globalStatus.style.display = 'none'; }, type === 'error' ? 10000 : 5000);
-}
-
-// fetchFile fonksiyonunu global olarak tanımla
-function fetchFile(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-            resolve(new Uint8Array(reader.result));
-        };
-        reader.onerror = reject;
-        reader.readAsArrayBuffer(file);
-    });
-}
-
-// Tab functionality
-function setupTabs() {
-    const tabs = document.querySelectorAll('.tab');
-    const tabContents = document.querySelectorAll('.tab-content');
-
-    tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            const tabId = tab.getAttribute('data-tab');
-            
-            tabs.forEach(t => t.classList.remove('active'));
-            tabContents.forEach(c => c.classList.remove('active'));
-            
-            tab.classList.add('active');
-            document.getElementById(tabId).classList.add('active');
-        });
-    });
-}
-
-// File input handlers
-function setupFileInputs() {
-    const fileConfigs = [
-        { area: 'mp4tomp3Area', input: 'mp4tomp3Input', button: 'mp4tomp3Btn', fileList: 'mp4tomp3FileList', filesContainer: 'mp4tomp3Files' },
-        { area: 'mp3tomp4AudioArea', input: 'mp3tomp4AudioInput', button: 'mp3tomp4Btn', fileList: 'mp3tomp4FileList', filesContainer: 'mp3tomp4Files' },
-        { area: 'mp3tomp4ImageArea', input: 'mp3tomp4ImageInput' },
-        { area: 'movtomp4Area', input: 'movtomp4Input', button: 'movtomp4Btn', fileList: 'movtomp4FileList', filesContainer: 'movtomp4Files' },
-        { area: 'invertmp4Area', input: 'invertmp4Input', button: 'invertmp4Btn', fileList: 'invertmp4FileList', filesContainer: 'invertmp4Files' },
-        { area: 'flipmp4Area', input: 'flipmp4Input', button: 'flipmp4Btn', fileList: 'flipmp4FileList', filesContainer: 'flipmp4Files' },
-        { area: 'mp3tomp4jAudioArea', input: 'mp3tomp4jAudioInput', button: 'mp3tomp4jBtn', fileList: 'mp3tomp4jFileList', filesContainer: 'mp3tomp4jFiles' },
-        { area: 'mp3tomp4jImageArea', input: 'mp3tomp4jImageInput' }
-    ];
-
-    fileConfigs.forEach(({ area, input, button, fileList, filesContainer }) => {
-        const areaElement = document.getElementById(area);
-        const inputElement = document.getElementById(input);
-        const buttonElement = button ? document.getElementById(button) : null;
-        const fileListElement = fileList ? document.getElementById(fileList) : null;
-        const filesContainerElement = filesContainer ? document.getElementById(filesContainer) : null;
-
-        if (areaElement && inputElement) {
-            areaElement.addEventListener('click', () => inputElement.click());
-
-            areaElement.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                areaElement.classList.add('dragover');
-            });
-
-            areaElement.addEventListener('dragleave', () => {
-                areaElement.classList.remove('dragover');
-            });
-
-            areaElement.addEventListener('drop', (e) => {
-                e.preventDefault();
-                areaElement.classList.remove('dragover');
-                if (e.dataTransfer.files.length > 0) {
-                    inputElement.files = e.dataTransfer.files;
-                    handleFileSelect(inputElement, buttonElement, areaElement, fileListElement, filesContainerElement);
-                }
-            });
-
-            inputElement.addEventListener('change', () => {
-                handleFileSelect(inputElement, buttonElement, areaElement, fileListElement, filesContainerElement);
-            });
-        }
-    });
-}
-
-function handleFileSelect(input, button, area, fileList, filesContainer) {
-    if (input.files.length > 0) {
-        const files = Array.from(input.files);
-        
-        if (files.length === 1) {
-            area.innerHTML = `<p>✅ Seçilen dosya: ${files[0].name}</p>`;
-        } else {
-            area.innerHTML = `<p>✅ ${files.length} dosya seçildi</p>`;
-        }
-        
-        if (fileList && filesContainer) {
-            fileList.style.display = 'block';
-            filesContainer.innerHTML = '';
-            
-            files.forEach((file, index) => {
-                const fileItem = document.createElement('div');
-                fileItem.className = 'file-item';
-                fileItem.innerHTML = `
-                    <span>${file.name}</span>
-                    <span>(${(file.size / 1024 / 1024).toFixed(2)} MB)</span>
-                `;
-                filesContainer.appendChild(fileItem);
-            });
-        }
-        
-        if (button) {
-            if (button.id === 'mp3tomp4Btn' || button.id === 'mp3tomp4jBtn') {
-                const audioInput = button.id === 'mp3tomp4Btn' ? 
-                    document.getElementById('mp3tomp4AudioInput') : 
-                    document.getElementById('mp3tomp4jAudioInput');
-                const imageInput = button.id === 'mp3tomp4Btn' ? 
-                    document.getElementById('mp3tomp4ImageInput') : 
-                    document.getElementById('mp3tomp4jImageInput');
-                
-                if (button.id === 'mp3tomp4jBtn') {
-                    button.disabled = !(audioInput.files.length > 0 && imageInput.files.length > 0);
-                } else {
-                    button.disabled = !(audioInput.files.length > 0);
-                }
-            } else {
-                button.disabled = false;
-            }
-        }
-    }
-}
-
-function logMessage(tab, message, type = 'info') {
-    const logger = document.getElementById(tab + 'Logger');
-    if (logger) {
-        const logEntry = document.createElement('div');
-        logEntry.className = `log-entry log-${type}`;
-        logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-        logger.appendChild(logEntry);
-        logger.scrollTop = logger.scrollHeight;
-    }
-}
-
-// Butonları etkinleştirme fonksiyonu
-function enableAllButtons() {
-    const buttons = [
-        'mp4tomp3Btn', 'mp3tomp4Btn', 'movtomp4Btn', 
-        'invertmp4Btn', 'flipmp4Btn', 'mp3tomp4jBtn'
-    ];
-    
-    buttons.forEach(btnId => {
-        const btn = document.getElementById(btnId);
-        if (btn) {
-            btn.disabled = false;
-            // Buton metinlerini orijinal hallerine döndür
-            switch(btnId) {
-                case 'mp4tomp3Btn': btn.textContent = 'MP3\'e Dönüştür'; break;
-                case 'mp3tomp4Btn': btn.textContent = 'MP4\'e Dönüştür'; break;
-                case 'movtomp4Btn': btn.textContent = 'MP4\'e Dönüştür'; break;
-                case 'invertmp4Btn': btn.textContent = 'Ters Çevir'; break;
-                case 'flipmp4Btn': btn.textContent = 'Ayna Efekti Uygula'; break;
-                case 'mp3tomp4jBtn': btn.textContent = 'MP4\'e Dönüştür'; break;
-            }
-        }
-    });
-}
-
-// Event listeners
-document.getElementById('mp4tomp3Btn').addEventListener('click', () => convertMP4ToMP3());
-document.getElementById('mp3tomp4Btn').addEventListener('click', () => convertMP3ToMP4());
-document.getElementById('movtomp4Btn').addEventListener('click', () => convertMOVToMP4());
-document.getElementById('invertmp4Btn').addEventListener('click', () => invertVideo());
-document.getElementById('flipmp4Btn').addEventListener('click', () => flipVideo());
-document.getElementById('mp3tomp4jBtn').addEventListener('click', () => convertMP3ToMP4WithImage());
-
-// Dönüşüm fonksiyonları
-async function convertMP4ToMP3() {
-    if (!isFFmpegLoaded || !ffmpeg) {
-        logMessage('mp4tomp3', 'FFmpeg henüz hazır değil', 'error');
-        return;
-    }
-
-    const input = document.getElementById('mp4tomp3Input');
-    const progress = document.getElementById('mp4tomp3Progress');
-    const progressFill = document.getElementById('mp4tomp3ProgressFill');
-    const progressText = document.getElementById('mp4tomp3ProgressText');
-
-    if (!input.files.length) {
-        logMessage('mp4tomp3', 'Lütfen önce bir dosya seçin', 'error');
-        return;
-    }
-
-    const files = Array.from(input.files);
-    
-    try {
-        progress.style.display = 'block';
-        progressFill.style.width = '0%';
-        progressText.textContent = 'İşleniyor...';
-
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            const fileName = file.name.replace(/\.[^/.]+$/, "");
-            
-            logMessage('mp4tomp3', `İşleniyor: ${file.name}`, 'info');
-            
-            const fileData = await fetchFile(file);
-            await ffmpeg.FS('writeFile', 'input.mp4', fileData);
-
-            await ffmpeg.run('-i', 'input.mp4', '-q:a', '0', '-map', 'a', 'output.mp3');
-
-            const data = await ffmpeg.FS('readFile', 'output.mp3');
-            
-            const blob = new Blob([data.buffer], { type: 'audio/mp3' });
-            const url = URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${fileName}.mp3`;
-            a.click();
-
-            logMessage('mp4tomp3', `✅ Başarılı: ${fileName}.mp3 oluşturuldu`, 'success');
-            
-            const currentProgress = Math.round(((i + 1) / files.length) * 100);
-            progressFill.style.width = `${currentProgress}%`;
-            progressText.textContent = `Tamamlandı: ${i + 1}/${files.length}`;
-            
-            URL.revokeObjectURL(url);
-            
-            // Temizlik
-            await ffmpeg.FS('unlink', 'input.mp4');
-            await ffmpeg.FS('unlink', 'output.mp3');
-        }
-
-        logMessage('mp4tomp3', 'Tüm dönüşümler tamamlandı!', 'success');
-        progress.style.display = 'none';
-    } catch (error) {
-        console.error('Conversion error:', error);
-        logMessage('mp4tomp3', 'Dönüştürme hatası: ' + error.message, 'error');
-        progress.style.display = 'none';
-    }
-}
-
-async function convertMP3ToMP4() {
-    if (!isFFmpegLoaded || !ffmpeg) {
-        logMessage('mp3tomp4', 'FFmpeg henüz hazır değil', 'error');
-        return;
-    }
-
-    const audioInput = document.getElementById('mp3tomp4AudioInput');
-    const imageInput = document.getElementById('mp3tomp4ImageInput');
-    const progress = document.getElementById('mp3tomp4Progress');
-    const progressFill = document.getElementById('mp3tomp4ProgressFill');
-    const progressText = document.getElementById('mp3tomp4ProgressText');
-
-    if (!audioInput.files.length) {
-        logMessage('mp3tomp4', 'Lütfen önce bir MP3 dosyası seçin', 'error');
-        return;
-    }
-
-    const audioFiles = Array.from(audioInput.files);
-    const imageFile = imageInput.files[0];
-    
-    try {
-        progress.style.display = 'block';
-        progressFill.style.width = '0%';
-        progressText.textContent = 'İşleniyor...';
-
-        for (let i = 0; i < audioFiles.length; i++) {
-            const audioFile = audioFiles[i];
-            const fileName = audioFile.name.replace('.mp3', '');
-            
-            logMessage('mp3tomp4', `İşleniyor: ${audioFile.name}`, 'info');
-            
-            const audioData = await fetchFile(audioFile);
-            await ffmpeg.FS('writeFile', 'audio.mp3', audioData);
-
-            let ffmpegCommand;
-            
-            if (imageFile) {
-                const imageData = await fetchFile(imageFile);
-                const imageExt = imageFile.name.split('.').pop();
-                await ffmpeg.FS('writeFile', `image.${imageExt}`, imageData);
-                
-                ffmpegCommand = [
-                    '-loop', '1', 
-                    '-i', `image.${imageExt}`,
-                    '-i', 'audio.mp3',
-                    '-c:v', 'libx264',
-                    '-tune', 'stillimage',
-                    '-c:a', 'aac',
-                    '-b:a', '192k',
-                    '-pix_fmt', 'yuv420p',
-                    '-shortest',
-                    'output.mp4'
-                ];
-            } else {
-                ffmpegCommand = [
-                    '-f', 'lavfi',
-                    '-i', 'color=black:size=1280x720:rate=30',
-                    '-i', 'audio.mp3',
-                    '-c:v', 'libx264',
-                    '-tune', 'stillimage',
-                    '-c:a', 'aac',
-                    '-b:a', '192k',
-                    '-pix_fmt', 'yuv420p',
-                    '-shortest',
-                    'output.mp4'
-                ];
-            }
-
-            await ffmpeg.run(...ffmpegCommand);
-
-            const data = await ffmpeg.FS('readFile', 'output.mp4');
-            
-            const blob = new Blob([data.buffer], { type: 'video/mp4' });
-            const url = URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${fileName}.mp4`;
-            a.click();
-
-            logMessage('mp3tomp4', `✅ Başarılı: ${fileName}.mp4 oluşturuldu`, 'success');
-            
-            const currentProgress = Math.round(((i + 1) / audioFiles.length) * 100);
-            progressFill.style.width = `${currentProgress}%`;
-            progressText.textContent = `Tamamlandı: ${i + 1}/${audioFiles.length}`;
-            
-            URL.revokeObjectURL(url);
-            
-            // Temizlik
-            await ffmpeg.FS('unlink', 'audio.mp3');
-            if (imageFile) {
-                await ffmpeg.FS('unlink', `image.${imageExt}`);
-            }
-            await ffmpeg.FS('unlink', 'output.mp4');
-        }
-
-        logMessage('mp3tomp4', 'Tüm dönüşümler tamamlandı!', 'success');
-        progress.style.display = 'none';
-    } catch (error) {
-        console.error('Conversion error:', error);
-        logMessage('mp3tomp4', 'Dönüştürme hatası: ' + error.message, 'error');
-        progress.style.display = 'none';
-    }
-}
-
-async function convertMOVToMP4() {
-    if (!isFFmpegLoaded || !ffmpeg) {
-        logMessage('movtomp4', 'FFmpeg henüz hazır değil', 'error');
-        return;
-    }
-
-    const input = document.getElementById('movtomp4Input');
-    const progress = document.getElementById('movtomp4Progress');
-    const progressFill = document.getElementById('movtomp4ProgressFill');
-    const progressText = document.getElementById('movtomp4ProgressText');
-
-    if (!input.files.length) {
-        logMessage('movtomp4', 'Lütfen önce bir dosya seçin', 'error');
-        return;
-    }
-
-    const files = Array.from(input.files);
-    
-    try {
-        progress.style.display = 'block';
-        progressFill.style.width = '0%';
-        progressText.textContent = 'İşleniyor...';
-
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            const fileName = file.name.replace(/\.[^/.]+$/, "");
-            
-            logMessage('movtomp4', `İşleniyor: ${file.name}`, 'info');
-            
-            const fileData = await fetchFile(file);
-            await ffmpeg.FS('writeFile', 'input.mov', fileData);
-
-            await ffmpeg.run(
-                '-i', 'input.mov',
-                '-c:v', 'libx264',
-                '-crf', '23',
-                '-preset', 'medium',
-                '-c:a', 'aac',
-                '-b:a', '128k',
-                'output.mp4'
-            );
-
-            const data = await ffmpeg.FS('readFile', 'output.mp4');
-            
-            const blob = new Blob([data.buffer], { type: 'video/mp4' });
-            const url = URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${fileName}.mp4`;
-            a.click();
-
-            logMessage('movtomp4', `✅ Başarılı: ${fileName}.mp4 oluşturuldu`, 'success');
-            
-            const currentProgress = Math.round(((i + 1) / files.length) * 100);
-            progressFill.style.width = `${currentProgress}%`;
-            progressText.textContent = `Tamamlandı: ${i + 1}/${files.length}`;
-            
-            URL.revokeObjectURL(url);
-            
-            // Temizlik
-            await ffmpeg.FS('unlink', 'input.mov');
-            await ffmpeg.FS('unlink', 'output.mp4');
-        }
-
-        logMessage('movtomp4', 'Tüm dönüşümler tamamlandı!', 'success');
-        progress.style.display = 'none';
-    } catch (error) {
-        console.error('Conversion error:', error);
-        logMessage('movtomp4', 'Dönüştürme hatası: ' + error.message, 'error');
-        progress.style.display = 'none';
-    }
-}
-
-async function invertVideo() {
-    if (!isFFmpegLoaded || !ffmpeg) {
-        logMessage('invertmp4', 'FFmpeg henüz hazır değil', 'error');
-        return;
-    }
-
-    const input = document.getElementById('invertmp4Input');
-    const progress = document.getElementById('invertmp4Progress');
-    const progressFill = document.getElementById('invertmp4ProgressFill');
-    const progressText = document.getElementById('invertmp4ProgressText');
-
-    if (!input.files.length) {
-        logMessage('invertmp4', 'Lütfen önce bir dosya seçin', 'error');
-        return;
-    }
-
-    const files = Array.from(input.files);
-    
-    try {
-        progress.style.display = 'block';
-        progressFill.style.width = '0%';
-        progressText.textContent = 'İşleniyor...';
-
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            const fileName = file.name.replace(/\.[^/.]+$/, "");
-            const extension = file.name.split('.').pop();
-            
-            logMessage('invertmp4', `İşleniyor: ${file.name}`, 'info');
-            
-            const fileData = await fetchFile(file);
-            await ffmpeg.FS('writeFile', `input.${extension}`, fileData);
-
-            await ffmpeg.run(
-                '-i', `input.${extension}`,
-                '-vf', 'reverse',
-                '-af', 'areverse',
-                `output.${extension}`
-            );
-
-            const data = await ffmpeg.FS('readFile', `output.${extension}`);
-            
-            const blob = new Blob([data.buffer], { type: `video/${extension}` });
-            const url = URL.createObjectURL(blob);
-            
-            const reversedName = fileName.split('').reverse().join('');
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${reversedName}.${extension}`;
-            a.click();
-
-            logMessage('invertmp4', `✅ Başarılı: ${reversedName}.${extension} oluşturuldu`, 'success');
-            
-            const currentProgress = Math.round(((i + 1) / files.length) * 100);
-            progressFill.style.width = `${currentProgress}%`;
-            progressText.textContent = `Tamamlandı: ${i + 1}/${files.length}`;
-            
-            URL.revokeObjectURL(url);
-            
-            // Temizlik
-            await ffmpeg.FS('unlink', `input.${extension}`);
-            await ffmpeg.FS('unlink', `output.${extension}`);
-        }
-
-        logMessage('invertmp4', 'Tüm dönüşümler tamamlandı!', 'success');
-        progress.style.display = 'none';
-    } catch (error) {
-        console.error('Reverse error:', error);
-        logMessage('invertmp4', 'İşlem hatası: ' + error.message, 'error');
-        progress.style.display = 'none';
-    }
-}
-
-async function flipVideo() {
-    if (!isFFmpegLoaded || !ffmpeg) {
-        logMessage('flipmp4', 'FFmpeg henüz hazır değil', 'error');
-        return;
-    }
-
-    const input = document.getElementById('flipmp4Input');
-    const progress = document.getElementById('flipmp4Progress');
-    const progressFill = document.getElementById('flipmp4ProgressFill');
-    const progressText = document.getElementById('flipmp4ProgressText');
-
-    if (!input.files.length) {
-        logMessage('flipmp4', 'Lütfen önce bir dosya seçin', 'error');
-        return;
-    }
-
-    const files = Array.from(input.files);
-    
-    try {
-        progress.style.display = 'block';
-        progressFill.style.width = '0%';
-        progressText.textContent = 'İşleniyor...';
-
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            const fileName = file.name.replace(/\.[^/.]+$/, "");
-            const extension = file.name.split('.').pop();
-            
-            logMessage('flipmp4', `İşleniyor: ${file.name}`, 'info');
-            
-            const fileData = await fetchFile(file);
-            await ffmpeg.FS('writeFile', `input.${extension}`, fileData);
-
-            await ffmpeg.run(
-                '-i', `input.${extension}`,
-                '-vf', 'hflip',
-                '-c:a', 'copy',
-                `output.${extension}`
-            );
-
-            const data = await ffmpeg.FS('readFile', `output.${extension}`);
-            
-            const blob = new Blob([data.buffer], { type: `video/${extension}` });
-            const url = URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${fileName}_mirrored.${extension}`;
-            a.click();
-
-            logMessage('flipmp4', `✅ Başarılı: ${fileName}_mirrored.${extension} oluşturuldu`, 'success');
-            
-            const currentProgress = Math.round(((i + 1) / files.length) * 100);
-            progressFill.style.width = `${currentProgress}%`;
-            progressText.textContent = `Tamamlandı: ${i + 1}/${files.length}`;
-            
-            URL.revokeObjectURL(url);
-            
-            // Temizlik
-            await ffmpeg.FS('unlink', `input.${extension}`);
-            await ffmpeg.FS('unlink', `output.${extension}`);
-        }
-
-        logMessage('flipmp4', 'Tüm dönüşümler tamamlandı!', 'success');
-        progress.style.display = 'none';
-    } catch (error) {
-        console.error('Mirror error:', error);
-        logMessage('flipmp4', 'İşlem hatası: ' + error.message, 'error');
-        progress.style.display = 'none';
-    }
-}
-
-async function convertMP3ToMP4WithImage() {
-    if (!isFFmpegLoaded || !ffmpeg) {
-        logMessage('mp3tomp4j', 'FFmpeg henüz hazır değil', 'error');
-        return;
-    }
-
-    const audioInput = document.getElementById('mp3tomp4jAudioInput');
-    const imageInput = document.getElementById('mp3tomp4jImageInput');
-    const progress = document.getElementById('mp3tomp4jProgress');
-    const progressFill = document.getElementById('mp3tomp4jProgressFill');
-    const progressText = document.getElementById('mp3tomp4jProgressText');
-
-    if (!audioInput.files.length || !imageInput.files.length) {
-        logMessage('mp3tomp4j', 'Lütfen hem MP3 hem de resim dosyası seçin', 'error');
-        return;
-    }
-
-    const audioFiles = Array.from(audioInput.files);
-    const imageFile = imageInput.files[0];
-    
-    try {
-        progress.style.display = 'block';
-        progressFill.style.width = '0%';
-        progressText.textContent = 'İşleniyor...';
-
-        for (let i = 0; i < audioFiles.length; i++) {
-            const audioFile = audioFiles[i];
-            const fileName = audioFile.name.replace('.mp3', '');
-            
-            logMessage('mp3tomp4j', `İşleniyor: ${audioFile.name}`, 'info');
-            
-            const audioData = await fetchFile(audioFile);
-            const imageData = await fetchFile(imageFile);
-            const imageExt = imageFile.name.split('.').pop();
-            
-            await ffmpeg.FS('writeFile', 'audio.mp3', audioData);
-            await ffmpeg.FS('writeFile', `image.${imageExt}`, imageData);
-
-            await ffmpeg.run(
-                '-loop', '1',
-                '-i', `image.${imageExt}`,
-                '-i', 'audio.mp3',
-                '-c:v', 'libx264',
-                '-tune', 'stillimage',
-                '-c:a', 'aac',
-                '-b:a', '192k',
-                '-pix_fmt', 'yuv420p',
-                '-shortest',
-                '-r', '1',
-                '-vf', 'scale=1280:720',
-                'output.mp4'
-            );
-
-            const data = await ffmpeg.FS('readFile', 'output.mp4');
-            
-            const blob = new Blob([data.buffer], { type: 'video/mp4' });
-            const url = URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${fileName}.mp4`;
-            a.click();
-
-            logMessage('mp3tomp4j', `✅ Başarılı: ${fileName}.mp4 oluşturuldu`, 'success');
-            
-            const currentProgress = Math.round(((i + 1) / audioFiles.length) * 100);
-            progressFill.style.width = `${currentProgress}%`;
-            progressText.textContent = `Tamamlandı: ${i + 1}/${audioFiles.length}`;
-            
-            URL.revokeObjectURL(url);
-            
-            // Temizlik
-            await ffmpeg.FS('unlink', 'audio.mp3');
-            await ffmpeg.FS('unlink', `image.${imageExt}`);
-            await ffmpeg.FS('unlink', 'output.mp4');
-        }
-
-        logMessage('mp3tomp4j', 'Tüm dönüşümler tamamlandı!', 'success');
-        progress.style.display = 'none';
-    } catch (error) {
-        console.error('Conversion error:', error);
-        logMessage('mp3tomp4j', 'Dönüştürme hatası: ' + error.message, 'error');
-        progress.style.display = 'none';
-    }
-}
-
-// Güncellenmiş başlatma fonksiyonu
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM yüklendi, bileşenler ayarlanıyor...');
-    
-    if (ffmpegInitializationStarted) {
-        console.log('FFmpeg zaten yüklenmeye başladı, tekrar başlatılmıyor.');
-        return;
-    }
-    
-    ffmpegInitializationStarted = true;
-    
-    setupTabs();
-    setupFileInputs();
-    
-    // FFmpeg script'i yüklendikten sonra başlat
-    if (typeof FFmpeg !== 'undefined') {
-        console.log('FFmpeg mevcut, hemen başlatılıyor...');
-        initFFmpeg();
-    } else {
-        console.log('FFmpeg henüz yüklenmedi, bekleniyor...');
-        // 1 saniye sonra tekrar dene
-        setTimeout(() => {
-            if (typeof FFmpeg !== 'undefined') {
-                initFFmpeg();
-            } else {
-                console.error('FFmpeg hala yüklenemedi');
-                showGlobalStatus('FFmpeg kütüphanesi yüklenemedi. Lütfen sayfayı yenileyin.', 'error');
-            }
-        }, 99999);
-    }
-});
-	</script>
+    <h1>🎬 Video Converter - Tüm Araçlar</h1>
+    <p>MP4→MP3 / MP3→MP4 / MOV→MP4 / Reverse Video / Mirror Flip / Audio Extract - Tamamen tarayıcınızda çalışır</p>
+
+    <!-- FFmpeg yükleme durumu -->
+    <div id="ffmpeg-status" class="status-message">FFmpeg yükleniyor...</div>
+
+    <!-- Araçlar Menüsü -->
+    <div>
+        <a href="#mp4-to-mp3">MP4 → MP3</a> |
+        <a href="#mp3-to-mp4">MP3 → MP4</a> |
+        <a href="#mov-to-mp4">MOV → MP4</a> |
+        <a href="#video-reverse">Video Reverse</a> |
+        <a href="#video-mirror">Video Mirror</a> |
+        <a href="#mp3-to-mp4-image">MP3 → MP4 (Resimli)</a>
+    </div>
+
+    <!-- MP4 → MP3 -->
+    <div id="mp4-to-mp3" class="tool-section">
+        <h2>MP4 → MP3</h2>
+        <p>MP4 videolardan ses çıkararak MP3 formatına dönüştürür</p>
+        <div class="file-input">
+            <label>Dosya Seçin:</label><br>
+            <input type="file" id="mp4-to-mp3-input" accept=".mp4" multiple>
+            <p>🎥 MP4 dosyasını buraya sürükleyin veya tıklayın</p>
+        </div>
+        <div>
+            <strong>Seçilen Dosyalar:</strong>
+            <ul id="mp4-to-mp3-files"></ul>
+        </div>
+        <button id="mp4-to-mp3-btn" disabled>MP3'e Dönüştür</button>
+        <div id="mp4-to-mp3-progress" class="status-message" style="display: none;">İşleniyor...</div>
+    </div>
+
+    <!-- MP3 → MP4 -->
+    <div id="mp3-to-mp4" class="tool-section">
+        <h2>MP3 → MP4</h2>
+        <p>MP3 dosyalarını kapak resimli MP4 videolara dönüştürür</p>
+        <div class="file-input">
+            <label>MP3 Dosyası:</label><br>
+            <input type="file" id="mp3-to-mp4-audio" accept=".mp3" multiple>
+            <p>🎵 MP3 dosyasını seçin</p>
+        </div>
+        <div class="file-input">
+            <label>Kapak Resmi (opsiyonel):</label><br>
+            <input type="file" id="mp3-to-mp4-image" accept=".jpg,.jpeg,.png">
+            <p>🖼️ Resim dosyasını seçin (JPEG/PNG)</p>
+        </div>
+        <div>
+            <strong>Seçilen MP3 Dosyaları:</strong>
+            <ul id="mp3-to-mp4-files"></ul>
+        </div>
+        <button id="mp3-to-mp4-btn" disabled>MP4'e Dönüştür</button>
+        <div id="mp3-to-mp4-progress" class="status-message" style="display: none;">İşleniyor...</div>
+    </div>
+
+    <!-- MOV → MP4 -->
+    <div id="mov-to-mp4" class="tool-section">
+        <h2>MOV → MP4</h2>
+        <p>MOV dosyalarını MP4 formatına dönüştürür</p>
+        <div class="file-input">
+            <label>Dosya Seçin:</label><br>
+            <input type="file" id="mov-to-mp4-input" accept=".mov" multiple>
+            <p>🎬 MOV dosyasını buraya sürükleyin veya tıklayın</p>
+        </div>
+        <div>
+            <strong>Seçilen Dosyalar:</strong>
+            <ul id="mov-to-mp4-files"></ul>
+        </div>
+        <button id="mov-to-mp4-btn" disabled>MP4'e Dönüştür</button>
+        <div id="mov-to-mp4-progress" class="status-message" style="display: none;">İşleniyor...</div>
+    </div>
+
+    <!-- Video Reverse -->
+    <div id="video-reverse" class="tool-section">
+        <h2>Video Reverse</h2>
+        <p>Videoları ve sesi ters çevirir, dosya adını da tersine çevirir</p>
+        <div class="file-input">
+            <label>Dosya Seçin:</label><br>
+            <input type="file" id="video-reverse-input" accept=".mp4,.mov" multiple>
+            <p>⏪ Video dosyasını buraya sürükleyin veya tıklayın</p>
+        </div>
+        <div>
+            <strong>Seçilen Dosyalar:</strong>
+            <ul id="video-reverse-files"></ul>
+        </div>
+        <button id="video-reverse-btn" disabled>Ters Çevir</button>
+        <div id="video-reverse-progress" class="status-message" style="display: none;">İşleniyor...</div>
+    </div>
+
+    <!-- Video Mirror -->
+    <div id="video-mirror" class="tool-section">
+        <h2>Video Mirror</h2>
+        <p>Video görüntüsünü yatay olarak ayna efekti uygular</p>
+        <div class="file-input">
+            <label>Dosya Seçin:</label><br>
+            <input type="file" id="video-mirror-input" accept=".mp4,.mov" multiple>
+            <p>🪞 Video dosyasını buraya sürükleyin veya tıklayın</p>
+        </div>
+        <div>
+            <strong>Seçilen Dosyalar:</strong>
+            <ul id="video-mirror-files"></ul>
+        </div>
+        <button id="video-mirror-btn" disabled>Ayna Efekti Uygula</button>
+        <div id="video-mirror-progress" class="status-message" style="display: none;">İşleniyor...</div>
+    </div>
+
+    <!-- MP3 → MP4 (Resimli) -->
+    <div id="mp3-to-mp4-image" class="tool-section">
+        <h2>MP3 → MP4 (Resimli)</h2>
+        <p>MP3'leri sabit resim arka planlı MP4'lere dönüştürür</p>
+        <div class="file-input">
+            <label>MP3 Dosyası:</label><br>
+            <input type="file" id="mp3-to-mp4-image-audio" accept=".mp3" multiple>
+            <p>🎵 MP3 dosyasını seçin</p>
+        </div>
+        <div class="file-input">
+            <label>Arka Plan Resmi:</label><br>
+            <input type="file" id="mp3-to-mp4-image-img" accept=".jpg,.jpeg,.png">
+            <p>🖼️ Resim dosyasını seçin (JPEG/PNG)</p>
+        </div>
+        <div>
+            <strong>Seçilen MP3 Dosyaları:</strong>
+            <ul id="mp3-to-mp4-image-files"></ul>
+        </div>
+        <button id="mp3-to-mp4-image-btn" disabled>MP4'e Dönüştür</button>
+        <div id="mp3-to-mp4-image-progress" class="status-message" style="display: none;">İşleniyor...</div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>© 2025 Video Converter - Tamamen tarayıcınızda çalışır. Hiçbir sunucuya veri gönderilmez.</p>
+        <p>FFmpeg.js kullanılarak geliştirilmiştir</p>
+    </footer>
+
+    <!-- JavaScript dosyasını ekle -->
+    <script src="converter.js"></script>
+    <script src="ffmpeg-handler.js"></script>
 </body>
 </html>
