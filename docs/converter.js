@@ -1,5 +1,3 @@
-[file name]: converter.js
-[file content begin]
 var FFmpegUtil = (() => {
   "use strict";
   var e = {
@@ -953,4 +951,3 @@ document.addEventListener('DOMContentLoaded', () => {
     disableAllButtons();
     initFFmpeg();
 });
-[file content end]
