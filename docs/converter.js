@@ -1,3 +1,5 @@
+[file name]: converter.js
+[file content begin]
 var FFmpegUtil = (() => {
   "use strict";
   var e = {
@@ -60,7 +62,7 @@ var FFmpegUtil = (() => {
               }, r.onerror = e => {
                 var o, r;
                 t(Error(`File could not be read! Code=${((null === (r = (null === (o = (null == e ? void 0 : e.target) || void 0 === o ? void 0 : o.error) || void 0 === r ? void 0 : r.code)) || -1)}`))
-              , r.readAsArrayBuffer(o)
+              }, r.readAsArrayBuffer(o)
             })))
           }
           var o;
@@ -935,38 +937,20 @@ function setupFileInputs() {
         input.addEventListener('change', () => handleFiles(input.files));
     };
 
-    setupDragAndDrop('mp4tomp3Input', 'mp4tomp3DragArea', 'mp4tomp3Files');
-    setupDragAndDrop('mp3tomp4AudioInput', 'mp3tomp4AudioDragArea', 'mp3tomp4AudioFiles');
-    setupDragAndDrop('mp3tomp4ImageInput', 'mp3tomp4ImageDragArea', 'mp3tomp4ImageFiles');
-    setupDragAndDrop('movtomp4Input', 'movtomp4DragArea', 'movtomp4Files');
-    setupDragAndDrop('invertmp4Input', 'invertmp4DragArea', 'invertmp4Files');
-    setupDragAndDrop('flipmp4Input', 'flipmp4DragArea', 'flipmp4Files');
-    setupDragAndDrop('mp3tomp4jAudioInput', 'mp3tomp4jAudioDragArea', 'mp3tomp4jAudioFiles');
-    setupDragAndDrop('mp3tomp4jImageInput', 'mp3tomp4jImageDragArea', 'mp3tomp4jImageFiles');
+    setupDragAndDrop('mp4tomp3Input', 'mp4tomp3DragArea', 'mp4tomp3FileList');
+    setupDragAndDrop('mp3tomp4AudioInput', 'mp3tomp4AudioDragArea', 'mp3tomp4AudioFileList');
+    setupDragAndDrop('mp3tomp4ImageInput', 'mp3tomp4ImageDragArea', 'mp3tomp4ImageFileList');
+    setupDragAndDrop('movtomp4Input', 'movtomp4DragArea', 'movtomp4FileList');
+    setupDragAndDrop('invertmp4Input', 'invertmp4DragArea', 'invertmp4FileList');
+    setupDragAndDrop('flipmp4Input', 'flipmp4DragArea', 'flipmp4FileList');
+    setupDragAndDrop('mp3tomp4jAudioInput', 'mp3tomp4jAudioDragArea', 'mp3tomp4jAudioFileList');
+    setupDragAndDrop('mp3tomp4jImageInput', 'mp3tomp4jImageDragArea', 'mp3tomp4jImageFileList');
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    if (ffmpegInitializationStarted) return;
-    ffmpegInitializationStarted = true;
-    
     setupTabs();
     setupFileInputs();
-    
-    const buttons = [
-        { id: 'mp4tomp3Btn', handler: convertMP4ToMP3 },
-        { id: 'mp3tomp4Btn', handler: convertMP3ToMP4 },
-        { id: 'movtomp4Btn', handler: convertMOVToMP4 },
-        { id: 'invertmp4Btn', handler: invertVideo },
-        { id: 'flipmp4Btn', handler: flipVideo },
-        { id: 'mp3tomp4jBtn', handler: convertMP3ToMP4WithImage }
-    ];
-
-    buttons.forEach(({ id, handler }) => {
-        const btn = document.getElementById(id);
-        if (btn) {
-            btn.addEventListener('click', handler);
-        }
-    });
-
+    disableAllButtons();
     initFFmpeg();
 });
+[file content end]
