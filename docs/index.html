@@ -832,12 +832,15 @@ async function initFFmpeg() {
 
         updateProgressBar(0, 'FFmpeg başlatılıyor...');
 
+        // SİZİN ORİJİNAL KODUNUZ
         if (typeof FFmpeg === 'undefined') {
             throw new Error('FFmpeg kütüphanesi yüklenemedi.');
         }
 
+        // SİZİN ORİJİNAL KODUNUZ
         ffmpeg = new FFmpeg();
         
+        // SİZİN ORİJİNAL KODUNUZ
         ffmpeg.on('progress', ({ progress }) => {
             const percentage = Math.round(progress * 100);
             updateProgressBar(percentage, `FFmpeg yükleniyor... ${percentage}%`);
@@ -847,7 +850,7 @@ async function initFFmpeg() {
 
         updateProgressBar(30, 'Core bileşenleri yükleniyor...');
 
-        // index001.html'deki DOĞRU URL'leri kullan
+        // SİZİN DÜZELTTİĞİNİZ VE TEST ETTİĞİNİZ URL'LER
         const coreURL = 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/umd/ffmpeg-core.js';
         const wasmURL = 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/umd/ffmpeg-core.wasm';
 
@@ -856,7 +859,7 @@ async function initFFmpeg() {
 
         updateProgressBar(60, 'WASM dosyası indiriliyor...');
 
-        // WASM'i GERÇEK boyutla indir
+        // SİZİN ORİJİNAL downloadWithResume FONKSİYONUNUZ
         const wasmData = await downloadWithResume(wasmURL, (loaded, total, percent) => {
             const currentPercent = 60 + Math.round((percent / 100) * 30);
             updateProgressBar(currentPercent, 
@@ -865,10 +868,10 @@ async function initFFmpeg() {
 
         updateProgressBar(95, 'FFmpeg core başlatılıyor...');
 
-        // FFmpeg'i başlat
+        // SİZİN ORİJİNAL KODUNUZ
         await ffmpeg.load({
             coreURL: coreURL,
-            wasmURL: URL.createObjectURL(new Blob([wasmData])), // İndirilmiş WASM'ı kullan
+            wasmURL: wasmURL, // Sizin orijinal kodunuzda bu şekildeydi
             ffmpegOptions: {
                 simd: false
             }
