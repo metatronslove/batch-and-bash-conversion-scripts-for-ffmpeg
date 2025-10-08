@@ -358,7 +358,7 @@
 		}
 	</style>	
 	<!-- FFmpeg.js CDN -->
-	<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.4/dist/umd/ffmpeg.js"></script>
+	<script src="ffmpeg/ffmpeg.js"></script>
 </head>
 <body>
 	<div class="container">
@@ -851,7 +851,7 @@ async function initFFmpeg() {
         updateProgressBar(30, 'Core bileşenleri yükleniyor...');
 
         // SİZİN DÜZELTTİĞİNİZ VE TEST ETTİĞİNİZ URL'LER
-        const coreURL = 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/umd/ffmpeg-core.js';
+        const coreURL = 'ffmpeg-core.js';
         const wasmURL = 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/umd/ffmpeg-core.wasm';
 
         console.log('Core URL:', coreURL);
