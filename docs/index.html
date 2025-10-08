@@ -829,13 +829,23 @@ async function initFFmpeg() {
     try {
         showGlobalStatus('FFmpeg yükleniyor...', 'info');
         console.log('FFmpeg yüklenmeye başlıyor...');
+        console.log('FFmpegWASM:', typeof FFmpegWASM, FFmpegWASM);
+        console.log('FFmpeg:', typeof FFmpeg, FFmpeg);
 
         updateProgressBar(0, 'FFmpeg başlatılıyor...');
 
+        // FFmpegWASM'i FFmpeg olarak alias et
+        if (typeof FFmpeg === 'undefined' && typeof FFmpegWASM !== 'undefined') {
+            window.FFmpeg = FFmpegWASM;
+            console.log('FFmpegWASM FFmpeg olarak alias edildi');
+        }
+
+        // FFmpeg kontrolü
         if (typeof FFmpeg === 'undefined') {
             throw new Error('FFmpeg kütüphanesi yüklenemedi.');
         }
 
+        console.log('FFmpeg instance oluşturuluyor...');
         ffmpeg = new FFmpeg();
         
         ffmpeg.on('progress', ({ progress }) => {
@@ -847,7 +857,6 @@ async function initFFmpeg() {
 
         updateProgressBar(30, 'Core bileşenleri yükleniyor...');
 
-        // SİZİN CDN URL'LERİNİZ
         const coreURL = 'https://metatronslove.github.io/batch-and-bash-conversion-scripts-for-ffmpeg/ffmpeg/ffmpeg-core.js';
         const wasmURL = 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/umd/ffmpeg-core.wasm';
 
@@ -856,7 +865,7 @@ async function initFFmpeg() {
 
         updateProgressBar(60, 'WASM dosyası indiriliyor...');
 
-        // WASM'i GERÇEK boyutla indir - SİZİN ÇÖZÜMÜNÜZ
+        // WASM'i GERÇEK boyutla indir
         const wasmData = await downloadWithResume(wasmURL, (loaded, total, percent) => {
             const currentPercent = 60 + Math.round((percent / 100) * 30);
             updateProgressBar(currentPercent, 
@@ -865,10 +874,10 @@ async function initFFmpeg() {
 
         updateProgressBar(95, 'FFmpeg core başlatılıyor...');
 
-        // SİZİN DOĞRU KODUNUZ - İndirilmiş WASM'ı kullan
+        // FFmpeg'i başlat
         await ffmpeg.load({
             coreURL: coreURL,
-            wasmURL: URL.createObjectURL(new Blob([wasmData])), // ← BU SİZİN ÇÖZÜMÜNÜZ
+            wasmURL: URL.createObjectURL(new Blob([wasmData])),
             ffmpegOptions: {
                 simd: false
             }
