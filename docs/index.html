@@ -638,7 +638,7 @@ let ffmpegInitializationStarted = false;
 
 // FFmpeg yüklenene kadar bekleyen fonksiyon
 async function waitForFFmpeg() {
-    const maxWaitTime = 10000; // 10 saniye
+    const maxWaitTime = 99999; // 100 saniye gibi
     const startTime = Date.now();
     
     while (typeof FFmpeg === 'undefined') {
