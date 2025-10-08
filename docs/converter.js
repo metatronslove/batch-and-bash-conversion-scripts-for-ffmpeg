@@ -1,3 +1,150 @@
+var FFmpegUtil = (() => {
+  "use strict";
+  var e = {
+      591: (e, t) => {
+        Object.defineProperty(t, "__esModule", {
+          value: !0
+        }), t.HeaderContentLength = void 0, t.HeaderContentLength = "Content-Length"
+      },
+      431: (e, t) => {
+        Object.defineProperty(t, "__esModule", {
+          value: !0
+        }), t.ERROR_INCOMPLETED_DOWNLOAD = t.ERROR_RESPONSE_BODY_READER = void 0, t.ERROR_RESPONSE_BODY_READER = new Error("failed to get response body reader"), t.ERROR_INCOMPLETED_DOWNLOAD = new Error("failed to complete download")
+      },
+      915: function(e, t, o) {
+        var r = this && this.__awaiter || function(e, t, o, r) {
+          return new(o || (o = Promise))((function(n, i) {
+            function d(e) {
+              try {
+                l(r.next(e))
+              } catch (e) {
+                i(e)
+              }
+            }
+
+            function a(e) {
+              try {
+                l(r.throw(e))
+              } catch (e) {
+                i(e)
+              }
+            }
+
+            function l(e) {
+              var t;
+              e.done ? n(e.value) : (t = e.value, t instanceof o ? t : new o((function(e) {
+                e(t)
+              }))).then(d, a)
+            }
+            l((r = r.apply(e, t || [])).next())
+          }))
+        };
+        Object.defineProperty(t, "__esModule", {
+          value: !0
+        }), t.toBlobURL = t.downloadWithProgress = t.importScript = t.fetchFile = void 0;
+        const n = o(431),
+          i = o(591);
+        t.fetchFile = e => r(void 0, void 0, void 0, (function*() {
+          let t;
+          if ("string" == typeof e) t = /data:_data\/([a-zA-Z]*);base64,([^"]*)/.test(e) ? atob(e.split(",")[1]).split("").map((e => e.charCodeAt(0))) : yield(yield fetch(e)).arrayBuffer();
+          else if (e instanceof URL) t = yield(yield fetch(e)).arrayBuffer();
+          else {
+            if (!(e instanceof File || e instanceof Blob)) return new Uint8Array;
+            t = yield(o = e, new Promise(((e, t) => {
+              const r = new FileReader;
+              r.onload = () => {
+                const {
+                  result: t
+                } = r;
+                t instanceof ArrayBuffer ? e(new Uint8Array(t)) : e(new Uint8Array)
+              }, r.onerror = e => {
+                var o, r;
+                t(Error(`File could not be read! Code=${(null===(r=null===(o=null==e?void 0:e.target)||void 0===o?void 0:o.error)||void 0===r?void 0:r.code)||-1}`)))
+              }, r.readAsArrayBuffer(o)
+            })))
+          }
+          var o;
+          return new Uint8Array(t)
+        })), t.importScript = e => r(void 0, void 0, void 0, (function*() {
+          return new Promise((t => {
+            const o = document.createElement("script"),
+              r = () => {
+                o.removeEventListener("load", r),
+                  t()
+              };
+            o.src = e, o.type = "text/javascript", o.addEventListener("load", r), document.getElementsByTagName("head")[0].appendChild(o)
+          }))
+        })), t.downloadWithProgress = (e, t) => r(void 0, void 0, void 0, (function*() {
+          var o;
+          const r = yield fetch(e);
+          let d;
+          try {
+            const a = parseInt(r.headers.get(i.HeaderContentLength) || "-1"),
+              l = null === (o = r.body) || void 0 === o ? void 0 : o.getReader();
+            if (!l) throw n.ERROR_RESPONSE_BODY_READER;
+            const c = [];
+            let s = 0;
+            for (;;) {
+              const {
+                done: o,
+                value: r
+              } = yield l.read(),
+                i = r ? r.length : 0;
+              if (o) {
+                if (-1 != a && a !== s) throw n.ERROR_INCOMPLETED_DOWNLOAD;
+                t && t({
+                  url: e,
+                  total: a,
+                  received: s,
+                  delta: i,
+                  done: o
+                });
+                break
+              }
+              c.push(r), s += i, t && t({
+                url: e,
+                total: a,
+                received: s,
+                delta: i,
+                done: o
+              })
+            }
+            const f = new Uint8Array(s);
+            let u = 0;
+            for (const e of c) f.set(e, u), u += e.length;
+            d = f.buffer
+          } catch (o) {
+            console.log("failed to send download progress event: ", o), d = yield r.arrayBuffer(), t && t({
+              url: e,
+              total: d.byteLength,
+              received: d.byteLength,
+              delta: 0,
+              done: !0
+            })
+          }
+          return d
+        })), t.toBlobURL = (e, o, n = !1, i) => r(void 0, void 0, void 0, (function*() {
+          const r = n ? yield(0, t.downloadWithProgress)(e, i) : yield(yield fetch(e)).arrayBuffer(),
+            d = new Blob([r], {
+              type: o
+            });
+          return URL.createObjectURL(d)
+        }))
+      }
+    },
+    t = {};
+
+  function o(r) {
+    var n = t[r];
+    if (void 0 !== n) return n.exports;
+    var i = t[r] = {
+      exports: {}
+    };
+    return e[r].call(i.exports, i, i.exports, o), i.exports
+  }
+  return o(915)
+})();
+
 if (typeof self.SharedArrayBuffer === 'undefined') {
     self.SharedArrayBuffer = ArrayBuffer;
 }
@@ -23,22 +170,34 @@ async function waitForFFmpeg() {
 }
 
 function updateProgressBar(percentage, message = '', section = null) {
-    let progressFill, progressText;
+    let progressFill, progressText, progressContainer;
+
     if (section) {
+        progressContainer = document.getElementById(`${section}Progress`);
         progressFill = document.getElementById(`${section}ProgressFill`);
         progressText = document.getElementById(`${section}ProgressText`);
     } else {
+        progressContainer = document.getElementById('ffmpeg-progress-container');
         progressFill = document.getElementById('ffmpeg-progress-fill');
         progressText = document.getElementById('ffmpeg-progress-text');
     }
     
+    if (progressContainer) {
+        progressContainer.style.display = 'block';
+    }
+
     if (progressFill) {
         progressFill.style.width = `${percentage}%`;
-        console.log(`Progress bar güncellendi: ${percentage}%${section ? ' (' + section + ')' : ''}`);
     }
     
     if (progressText && message) {
         progressText.textContent = message;
+    }
+
+    if (percentage >= 100 && section) {
+        setTimeout(() => {
+            if (progressContainer) progressContainer.style.display = 'none';
+        }, 3000);
     }
 }
 
@@ -213,23 +372,23 @@ async function initFFmpeg() {
         const FFmpegLib = await waitForFFmpeg();
         console.log('FFmpeg kütüphanesi yüklendi:', FFmpegLib);
 
-        ffmpeg = new FFmpegLib();
+        ffmpeg = new FFmpegLib.FFmpeg();
         
         ffmpeg.on('log', ({ message }) => {
             console.log('FFmpeg log:', message);
-            showGlobalStatus(message, 'info');
+            // showGlobalStatus(message, 'info');
         });
 
-        ffmpeg.on('progress', ({ progress }) => {
+        ffmpeg.on('progress', ({ progress, time }) => {
             const percentage = Math.round(progress * 100);
-            updateProgressBar(percentage, `FFmpeg yükleniyor... ${percentage}%`);
+            updateProgressBar(percentage, `İşleniyor... ${percentage}%`);
         });
 
         console.log('FFmpeg instance oluşturuldu');
 
         updateProgressBar(30, 'Core bileşenleri yükleniyor...');
 
-        const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd';
+        const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
         coreURL = await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript');
         wasmURL = await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm');
 
@@ -284,16 +443,12 @@ function displayFiles(inputId, listId) {
     const input = document.getElementById(inputId);
     const list = document.getElementById(listId);
     if (input && list) {
-        input.addEventListener('change', () => {
-            list.innerHTML = '';
-            Array.from(input.files).forEach(file => {
-                const li = document.createElement('li');
-                li.textContent = file.name;
-                list.appendChild(li);
-            });
+        list.innerHTML = '';
+        Array.from(input.files).forEach(file => {
+            const li = document.createElement('li');
+            li.textContent = file.name;
+            list.appendChild(li);
         });
-    } else {
-        console.error(`displayFiles error: Input ${inputId} or list ${listId} not found`);
     }
 }
 
@@ -332,9 +487,7 @@ function showGlobalStatus(message, type = 'info') {
     if (status) {
         status.textContent = message;
         status.className = `status-message ${type}`;
-        status.style.display = 'block';
-    } else {
-        console.log('Global status elementi bulunamadı');
+        status.classList.remove('hidden');
     }
 }
 
@@ -344,7 +497,6 @@ function logMessage(section, message, type = 'info') {
     if (progressText) {
         progressText.textContent = message;
     }
-    showGlobalStatus(message, type);
 }
 
 async function convertMP4ToMP3() {
@@ -354,10 +506,6 @@ async function convertMP4ToMP3() {
     }
 
     const input = document.getElementById('mp4tomp3Input');
-    const progress = document.getElementById('mp4tomp3Progress');
-    const progressFill = document.getElementById('mp4tomp3ProgressFill');
-    const progressText = document.getElementById('mp4tomp3ProgressText');
-
     if (!input.files.length) {
         logMessage('mp4tomp3', 'Lütfen önce bir dosya seçin', 'error');
         return;
@@ -366,16 +514,12 @@ async function convertMP4ToMP3() {
     const files = Array.from(input.files);
     
     try {
-        progress.style.display = 'block';
-        progressFill.style.width = '0%';
-        progressText.textContent = 'İşleniyor...';
-
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             const fileName = file.name.replace(/\.[^/.]+$/, "");
             const extension = file.name.split('.').pop();
             
-            logMessage('mp4tomp3', `İşleniyor: ${file.name}`, 'info');
+            updateProgressBar(0, `İşleniyor: ${file.name}`, 'mp4tomp3');
             
             const fileData = await fetchFile(file);
             await ffmpeg.FS('writeFile', `input.${extension}`, fileData);
@@ -398,10 +542,7 @@ async function convertMP4ToMP3() {
             a.download = `${fileName}.mp3`;
             a.click();
 
-            logMessage('mp4tomp3', `✅ Başarılı: ${fileName}.mp3 oluşturuldu`, 'success');
-            
-            const currentProgress = Math.round(((i + 1) / files.length) * 100);
-            updateProgressBar(currentProgress, `Tamamlandı: ${i + 1}/${files.length}`, 'mp4tomp3');
+            updateProgressBar(100, `✅ Başarılı: ${fileName}.mp3 oluşturuldu`, 'mp4tomp3');
             
             URL.revokeObjectURL(url);
             
@@ -409,12 +550,10 @@ async function convertMP4ToMP3() {
             ffmpeg.FS('unlink', 'output.mp3');
         }
 
-        logMessage('mp4tomp3', 'Tüm dönüşümler tamamlandı!', 'success');
-        progress.style.display = 'none';
+        showGlobalStatus('Tüm dönüşümler tamamlandı!', 'success');
     } catch (error) {
         console.error('MP4 to MP3 error:', error);
         logMessage('mp4tomp3', 'Dönüştürme hatası: ' + error.message, 'error');
-        progress.style.display = 'none';
     }
 }
 
@@ -426,9 +565,6 @@ async function convertMP3ToMP4() {
 
     const audioInput = document.getElementById('mp3tomp4AudioInput');
     const imageInput = document.getElementById('mp3tomp4ImageInput');
-    const progress = document.getElementById('mp3tomp4Progress');
-    const progressFill = document.getElementById('mp3tomp4ProgressFill');
-    const progressText = document.getElementById('mp3tomp4ProgressText');
 
     if (!audioInput.files.length) {
         logMessage('mp3tomp4', 'Lütfen MP3 dosyası seçin', 'error');
@@ -439,15 +575,11 @@ async function convertMP3ToMP4() {
     const imageFile = imageInput.files[0] || null;
     
     try {
-        progress.style.display = 'block';
-        progressFill.style.width = '0%';
-        progressText.textContent = 'İşleniyor...';
-
         for (let i = 0; i < audioFiles.length; i++) {
             const audioFile = audioFiles[i];
             const fileName = audioFile.name.replace('.mp3', '');
             
-            logMessage('mp3tomp4', `İşleniyor: ${audioFile.name}`, 'info');
+            updateProgressBar(0, `İşleniyor: ${audioFile.name}`, 'mp3tomp4');
             
             const audioData = await fetchFile(audioFile);
             await ffmpeg.FS('writeFile', 'audio.mp3', audioData);
@@ -471,22 +603,70 @@ async function convertMP3ToMP4() {
                     '-vf', 'scale=1280:720',
                     'output.mp4'
                 );
-
                 ffmpeg.FS('unlink', `image.${imageExt}`);
             } else {
-                await ffmpeg.run(
-                    '-f', 'lavfi',
-                    '-i', 'color=c=black:s=1280x720:r=1',
+                 await ffmpeg.run(
                     '-i', 'audio.mp3',
-                    '-c:v', 'libx264',
-                    '-tune', 'stillimage',
                     '-c:a', 'aac',
                     '-b:a', '192k',
-                    '-pix_fmt', 'yuv420p',
-                    '-shortest',
                     'output.mp4'
                 );
             }
+
+            const data = ffmpeg.FS('readFile', 'output.mp4');
+            const blob = new Blob([data.buffer], { type: 'video/mp4' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${fileName}.mp4`;
+            a.click();
+
+            updateProgressBar(100, `✅ Başarılı: ${fileName}.mp4 oluşturuldu`, 'mp3tomp4');
+            
+            URL.revokeObjectURL(url);
+            
+            ffmpeg.FS('unlink', 'audio.mp3');
+            ffmpeg.FS('unlink', 'output.mp4');
+        }
+
+        showGlobalStatus('Tüm dönüşümler tamamlandı!', 'success');
+    } catch (error) {
+        console.error('MP3 to MP4 error:', error);
+        logMessage('mp3tomp4', 'Dönüştürme hatası: ' + error.message, 'error');
+    }
+}
+
+async function convertMOVToMP4() {
+    if (!isFFmpegLoaded || !ffmpeg) {
+        logMessage('movtomp4', 'FFmpeg henüz hazır değil', 'error');
+        return;
+    }
+
+    const input = document.getElementById('movtomp4Input');
+    if (!input.files.length) {
+        logMessage('movtomp4', 'Lütfen önce bir dosya seçin', 'error');
+        return;
+    }
+
+    const files = Array.from(input.files);
+    
+    try {
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const fileName = file.name.replace(/\.[^/.]+$/, "");
+            
+            updateProgressBar(0, `İşleniyor: ${file.name}`, 'movtomp4');
+            
+            const fileData = await fetchFile(file);
+            await ffmpeg.FS('writeFile', file.name, fileData);
+
+            await ffmpeg.run(
+                '-i', file.name,
+                '-c:v', 'libx264',
+                '-c:a', 'aac',
+                'output.mp4'
+            );
 
             const data = ffmpeg.FS('readFile', 'output.mp4');
             
@@ -498,93 +678,18 @@ async function convertMP3ToMP4() {
             a.download = `${fileName}.mp4`;
             a.click();
 
-            logMessage('mp3tomp4', `✅ Başarılı: ${fileName}.mp4 oluşturuldu`, 'success');
-            
-            const currentProgress = Math.round(((i + 1) / audioFiles.length) * 100);
-            updateProgressBar(currentProgress, `Tamamlandı: ${i + 1}/${audioFiles.length}`, 'mp3tomp4');
-            
-            URL.revokeObjectURL(url);
-            
-            ffmpeg.FS('unlink', 'audio.mp3');
-            ffmpeg.FS('unlink', 'output.mp4');
-        }
-
-        logMessage('mp3tomp4', 'Tüm dönüşümler tamamlandı!', 'success');
-        progress.style.display = 'none';
-    } catch (error) {
-        console.error('MP3 to MP4 error:', error);
-        logMessage('mp3tomp4', 'Dönüştürme hatası: ' + error.message, 'error');
-        progress.style.display = 'none';
-    }
-}
-
-async function convertMOVToMP4() {
-    if (!isFFmpegLoaded || !ffmpeg) {
-        logMessage('movtomp4', 'FFmpeg henüz hazır değil', 'error');
-        return;
-    }
-
-    const input = document.getElementById('movtomp4Input');
-    const progress = document.getElementById('movtomp4Progress');
-    const progressFill = document.getElementById('movtomp4ProgressFill');
-    const progressText = document.getElementById('movtomp4ProgressText');
-
-    if (!input.files.length) {
-        logMessage('movtomp4', 'Lütfen önce bir dosya seçin', 'error');
-        return;
-    }
-
-    const files = Array.from(input.files);
-    
-    try {
-        progress.style.display = 'block';
-        progressFill.style.width = '0%';
-        progressText.textContent = 'İşleniyor...';
-
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            const fileName = file.name.replace(/\.[^/.]+$/, "");
-            const extension = file.name.split('.').pop();
-            
-            logMessage('movtomp4', `İşleniyor: ${file.name}`, 'info');
-            
-            const fileData = await fetchFile(file);
-            await ffmpeg.FS('writeFile', file.name, fileData);
-
-            await ffmpeg.run(
-                '-i', file.name,
-                '-c:v', 'copy',
-                '-c:a', 'aac',
-                `output_${fileName}.mp4`
-            );
-
-            const data = ffmpeg.FS('readFile', `output_${fileName}.mp4`);
-            
-            const blob = new Blob([data.buffer], { type: 'video/mp4' });
-            const url = URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `output_${fileName}.mp4`;
-            a.click();
-
-            logMessage('movtomp4', `✅ Başarılı: output_${fileName}.mp4 oluşturuldu`, 'success');
-            
-            const currentProgress = Math.round(((i + 1) / files.length) * 100);
-            updateProgressBar(currentProgress, `Tamamlandı: ${i + 1}/${files.length}`, 'movtomp4');
+            updateProgressBar(100, `✅ Başarılı: ${fileName}.mp4 oluşturuldu`, 'movtomp4');
             
             URL.revokeObjectURL(url);
             
             ffmpeg.FS('unlink', file.name);
-            ffmpeg.FS('unlink', `output_${fileName}.mp4`);
+            ffmpeg.FS('unlink', 'output.mp4');
         }
 
-        logMessage('movtomp4', 'Tüm dönüşümler tamamlandı!', 'success');
-        progress.style.display = 'none';
+        showGlobalStatus('Tüm dönüşümler tamamlandı!', 'success');
     } catch (error) {
         console.error('MOV to MP4 error:', error);
         logMessage('movtomp4', 'Dönüştürme hatası: ' + error.message, 'error');
-        progress.style.display = 'none';
     }
 }
 
@@ -595,10 +700,6 @@ async function invertVideo() {
     }
 
     const input = document.getElementById('invertmp4Input');
-    const progress = document.getElementById('invertmp4Progress');
-    const progressFill = document.getElementById('invertmp4ProgressFill');
-    const progressText = document.getElementById('invertmp4ProgressText');
-
     if (!input.files.length) {
         logMessage('invertmp4', 'Lütfen önce bir dosya seçin', 'error');
         return;
@@ -607,17 +708,13 @@ async function invertVideo() {
     const files = Array.from(input.files);
     
     try {
-        progress.style.display = 'block';
-        progressFill.style.width = '0%';
-        progressText.textContent = 'İşleniyor...';
-
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             const fileName = file.name.replace(/\.[^/.]+$/, "");
             const extension = file.name.split('.').pop();
             const reversedName = fileName.split('').reverse().join('');
             
-            logMessage('invertmp4', `İşleniyor: ${file.name}`, 'info');
+            updateProgressBar(0, `İşleniyor: ${file.name}`, 'invertmp4');
             
             const fileData = await fetchFile(file);
             await ffmpeg.FS('writeFile', `input.${extension}`, fileData);
@@ -639,10 +736,7 @@ async function invertVideo() {
             a.download = `${reversedName}.${extension}`;
             a.click();
 
-            logMessage('invertmp4', `✅ Başarılı: ${reversedName}.${extension} oluşturuldu`, 'success');
-            
-            const currentProgress = Math.round(((i + 1) / files.length) * 100);
-            updateProgressBar(currentProgress, `Tamamlandı: ${i + 1}/${files.length}`, 'invertmp4');
+            updateProgressBar(100, `✅ Başarılı: ${reversedName}.${extension} oluşturuldu`, 'invertmp4');
             
             URL.revokeObjectURL(url);
             
@@ -650,12 +744,10 @@ async function invertVideo() {
             ffmpeg.FS('unlink', `output.${extension}`);
         }
 
-        logMessage('invertmp4', 'Tüm dönüşümler tamamlandı!', 'success');
-        progress.style.display = 'none';
+        showGlobalStatus('Tüm dönüşümler tamamlandı!', 'success');
     } catch (error) {
         console.error('Reverse error:', error);
         logMessage('invertmp4', 'İşlem hatası: ' + error.message, 'error');
-        progress.style.display = 'none';
     }
 }
 
@@ -666,10 +758,6 @@ async function flipVideo() {
     }
 
     const input = document.getElementById('flipmp4Input');
-    const progress = document.getElementById('flipmp4Progress');
-    const progressFill = document.getElementById('flipmp4ProgressFill');
-    const progressText = document.getElementById('flipmp4ProgressText');
-
     if (!input.files.length) {
         logMessage('flipmp4', 'Lütfen önce bir dosya seçin', 'error');
         return;
@@ -678,16 +766,12 @@ async function flipVideo() {
     const files = Array.from(input.files);
     
     try {
-        progress.style.display = 'block';
-        progressFill.style.width = '0%';
-        progressText.textContent = 'İşleniyor...';
-
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             const fileName = file.name.replace(/\.[^/.]+$/, "");
             const extension = file.name.split('.').pop();
             
-            logMessage('flipmp4', `İşleniyor: ${file.name}`, 'info');
+            updateProgressBar(0, `İşleniyor: ${file.name}`, 'flipmp4');
             
             const fileData = await fetchFile(file);
             await ffmpeg.FS('writeFile', `input.${extension}`, fileData);
@@ -709,10 +793,7 @@ async function flipVideo() {
             a.download = `${fileName}_mirrored.${extension}`;
             a.click();
 
-            logMessage('flipmp4', `✅ Başarılı: ${fileName}_mirrored.${extension} oluşturuldu`, 'success');
-            
-            const currentProgress = Math.round(((i + 1) / files.length) * 100);
-            updateProgressBar(currentProgress, `Tamamlandı: ${i + 1}/${files.length}`, 'flipmp4');
+            updateProgressBar(100, `✅ Başarılı: ${fileName}_mirrored.${extension} oluşturuldu`, 'flipmp4');
             
             URL.revokeObjectURL(url);
             
@@ -720,12 +801,10 @@ async function flipVideo() {
             ffmpeg.FS('unlink', `output.${extension}`);
         }
 
-        logMessage('flipmp4', 'Tüm dönüşümler tamamlandı!', 'success');
-        progress.style.display = 'none';
+        showGlobalStatus('Tüm dönüşümler tamamlandı!', 'success');
     } catch (error) {
         console.error('Mirror error:', error);
         logMessage('flipmp4', 'İşlem hatası: ' + error.message, 'error');
-        progress.style.display = 'none';
     }
 }
 
@@ -737,9 +816,6 @@ async function convertMP3ToMP4WithImage() {
 
     const audioInput = document.getElementById('mp3tomp4jAudioInput');
     const imageInput = document.getElementById('mp3tomp4jImageInput');
-    const progress = document.getElementById('mp3tomp4jProgress');
-    const progressFill = document.getElementById('mp3tomp4jProgressFill');
-    const progressText = document.getElementById('mp3tomp4jProgressText');
 
     if (!audioInput.files.length || !imageInput.files.length) {
         logMessage('mp3tomp4j', 'Lütfen hem MP3 hem de resim dosyası seçin', 'error');
@@ -750,15 +826,11 @@ async function convertMP3ToMP4WithImage() {
     const imageFile = imageInput.files[0];
     
     try {
-        progress.style.display = 'block';
-        progressFill.style.width = '0%';
-        progressText.textContent = 'İşleniyor...';
-
         for (let i = 0; i < audioFiles.length; i++) {
             const audioFile = audioFiles[i];
             const fileName = audioFile.name.replace('.mp3', '');
             
-            logMessage('mp3tomp4j', `İşleniyor: ${audioFile.name}`, 'info');
+            updateProgressBar(0, `İşleniyor: ${audioFile.name}`, 'mp3tomp4j');
             
             const audioData = await fetchFile(audioFile);
             const imageData = await fetchFile(imageFile);
@@ -792,10 +864,7 @@ async function convertMP3ToMP4WithImage() {
             a.download = `${fileName}.mp4`;
             a.click();
 
-            logMessage('mp3tomp4j', `✅ Başarılı: ${fileName}.mp4 oluşturuldu`, 'success');
-            
-            const currentProgress = Math.round(((i + 1) / audioFiles.length) * 100);
-            updateProgressBar(currentProgress, `Tamamlandı: ${i + 1}/${audioFiles.length}`, 'mp3tomp4j');
+            updateProgressBar(100, `✅ Başarılı: ${fileName}.mp4 oluşturuldu`, 'mp3tomp4j');
             
             URL.revokeObjectURL(url);
             
@@ -804,12 +873,10 @@ async function convertMP3ToMP4WithImage() {
             ffmpeg.FS('unlink', 'output.mp4');
         }
 
-        logMessage('mp3tomp4j', 'Tüm dönüşümler tamamlandı!', 'success');
-        progress.style.display = 'none';
+        showGlobalStatus('Tüm dönüşümler tamamlandı!', 'success');
     } catch (error) {
         console.error('Conversion error:', error);
         logMessage('mp3tomp4j', 'Dönüştürme hatası: ' + error.message, 'error');
-        progress.style.display = 'none';
     }
 }
 
@@ -822,45 +889,70 @@ function setupTabs() {
             e.preventDefault();
             const tabId = tab.getAttribute('data-tab');
 
-            // Tüm sekmeleri ve bölümleri sıfırla
             tabs.forEach(t => t.classList.remove('active'));
             sections.forEach(s => s.classList.remove('active'));
 
-            // Seçilen sekmeyi ve bölümü aktif et
             tab.classList.add('active');
             document.getElementById(tabId).classList.add('active');
-
-            console.log(`Sekme değiştirildi: ${tabId}`);
         });
     });
-
-    console.log('Sekmeler ayarlandı');
 }
 
 function setupFileInputs() {
-    console.log('File inputs ayarlandı');
+    const setupDragAndDrop = (inputId, dragAreaId, fileListId) => {
+        const input = document.getElementById(inputId);
+        const dragArea = document.getElementById(dragAreaId);
+
+        if (!input || !dragArea || !fileListId) {
+            console.error(`Drag and drop setup error: Missing elements for ${inputId}`);
+            return;
+        }
+
+        const fileList = document.getElementById(fileListId);
+        if (!fileList) {
+            console.error(`Drag and drop setup error: File list element ${fileListId} not found`);
+            return;
+        }
+
+        const handleFiles = (files) => {
+            input.files = files;
+            displayFiles(inputId, fileListId);
+        };
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dragArea.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (['dragenter', 'dragover'].includes(eventName)) {
+                    dragArea.classList.add('highlight');
+                } else {
+                    dragArea.classList.remove('highlight');
+                }
+            }, false);
+        });
+
+        dragArea.addEventListener('drop', (e) => handleFiles(e.dataTransfer.files), false);
+        dragArea.addEventListener('click', () => input.click());
+        input.addEventListener('change', () => handleFiles(input.files));
+    };
+
+    setupDragAndDrop('mp4tomp3Input', 'mp4tomp3DragArea', 'mp4tomp3Files');
+    setupDragAndDrop('mp3tomp4AudioInput', 'mp3tomp4AudioDragArea', 'mp3tomp4AudioFiles');
+    setupDragAndDrop('mp3tomp4ImageInput', 'mp3tomp4ImageDragArea', 'mp3tomp4ImageFiles');
+    setupDragAndDrop('movtomp4Input', 'movtomp4DragArea', 'movtomp4Files');
+    setupDragAndDrop('invertmp4Input', 'invertmp4DragArea', 'invertmp4Files');
+    setupDragAndDrop('flipmp4Input', 'flipmp4DragArea', 'flipmp4Files');
+    setupDragAndDrop('mp3tomp4jAudioInput', 'mp3tomp4jAudioDragArea', 'mp3tomp4jAudioFiles');
+    setupDragAndDrop('mp3tomp4jImageInput', 'mp3tomp4jImageDragArea', 'mp3tomp4jImageFiles');
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM yüklendi, bileşenler ayarlanıyor...');
-    
-    if (ffmpegInitializationStarted) {
-        console.log('FFmpeg zaten yüklenmeye başladı, tekrar başlatılmıyor.');
-        return;
-    }
-    
+    if (ffmpegInitializationStarted) return;
     ffmpegInitializationStarted = true;
     
     setupTabs();
     setupFileInputs();
     
-    displayFiles('mp4tomp3Input', 'mp4tomp3Files');
-    displayFiles('mp3tomp4AudioInput', 'mp3tomp4Files');
-    displayFiles('movtomp4Input', 'movtomp4Files');
-    displayFiles('invertmp4Input', 'invertmp4Files');
-    displayFiles('flipmp4Input', 'flipmp4Files');
-    displayFiles('mp3tomp4jAudioInput', 'mp3tomp4jFiles');
-
     const buttons = [
         { id: 'mp4tomp3Btn', handler: convertMP4ToMP3 },
         { id: 'mp3tomp4Btn', handler: convertMP3ToMP4 },
@@ -874,8 +966,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const btn = document.getElementById(id);
         if (btn) {
             btn.addEventListener('click', handler);
-        } else {
-            console.error(`Button with ID ${id} not found`);
         }
     });
 

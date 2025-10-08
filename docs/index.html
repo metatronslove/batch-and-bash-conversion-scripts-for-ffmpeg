@@ -2,144 +2,512 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>🎬 Video Converter - Tüm Araçlar</title>
-    <meta name="description" content="MP4→MP3 / MP3→MP4 / MOV→MP4 / Reverse Video / Mirror Flip / Audio Extract - Tamamen tarayıcınızda çalışır">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎬 Video Dönüştürücü - Tüm Araçlar</title>
+    <meta name="description" content="MP4→MP3 / MP3→MP4 / MOV→MP4 / Videoyu Ters Çevir / Videoyu Aynala / Ses Çıkar - Tamamen tarayıcınızda çalışır">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-        .status-message { color: #333; font-weight: bold; margin: 10px 0; }
-        .status-message.error { color: red; }
-        .status-message.success { color: green; }
-        #ffmpeg-progress-container { display: block; margin: 20px 0; }
-        #ffmpeg-progress-fill { height: 20px; background: #4CAF50; transition: width 0.3s; width: 0%; }
-        #ffmpeg-progress-text { margin-top: 5px; }
-        section { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; display: none; }
-        section.active { display: block; }
-        button { margin-top: 10px; padding: 8px 16px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        button:disabled { background: #ccc; cursor: not-allowed; }
-        ul { list-style: none; padding: 0; }
-        li { margin: 5px 0; }
-        nav { margin: 20px 0; }
-        nav a { margin-right: 10px; text-decoration: none; color: #007BFF; padding: 5px 10px; border-radius: 4px; }
-        nav a:hover { background: #f0f0f0; }
-        nav a.active { background: #007BFF; color: white; }
-        input[type="file"] { margin: 10px 0; }
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #007BFF;
+            --background-color: #f4f7f6;
+            --card-background: #ffffff;
+            --text-color: #333;
+            --border-color: #e0e0e0;
+            --shadow-light: rgba(0, 0, 0, 0.05);
+            --shadow-medium: rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 20px auto;
+            padding: 0 20px;
+            flex-grow: 1;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            box-shadow: 0 2px 4px var(--shadow-medium);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+
+        header p {
+            margin-top: 5px;
+            font-size: 1.1em;
+        }
+
+        .status-message {
+            padding: 10px 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-message.error {
+            background-color: #ffe0e0;
+            color: #d32f2f;
+            border: 1px solid #d32f2f;
+        }
+
+        .status-message.success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #2e7d32;
+        }
+
+        .status-message.info {
+            background-color: #e3f2fd;
+            color: #1976d2;
+            border: 1px solid #1976d2;
+        }
+
+        .status-message.hidden {
+            display: none;
+        }
+
+        #ffmpeg-progress-container {
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 10px;
+            height: 25px;
+            position: relative;
+        }
+
+        #ffmpeg-progress-fill {
+            height: 100%;
+            background: var(--primary-color);
+            width: 0%;
+            transition: width 0.3s ease-in-out;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        #ffmpeg-progress-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            line-height: 25px;
+            color: var(--text-color);
+            font-size: 0.9em;
+            font-weight: 600;
+            z-index: 1;
+        }
+
+        nav {
+            background-color: var(--card-background);
+            padding: 10px 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px var(--shadow-light);
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: var(--secondary-color);
+            padding: 8px 15px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        nav a:hover {
+            background-color: #e3f2fd;
+            color: var(--secondary-color);
+        }
+
+        nav a.active {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        section {
+            background-color: var(--card-background);
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px var(--shadow-light);
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        section.active {
+            display: block;
+        }
+
+        section h2 {
+            color: var(--primary-color);
+            margin-top: 0;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        section p {
+            margin-bottom: 15px;
+            color: #555;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        input[type="file"] {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            background-color: #fdfdfd;
+            box-sizing: border-box;
+        }
+
+        input[type="file"]::file-selector-button {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            transition: background-color 0.3s ease;
+        }
+
+        input[type="file"]::file-selector-button:hover {
+            background-color: #0056b3;
+        }
+
+        .file-drag-area {
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 10px;
+            margin-bottom: 15px;
+            color: #777;
+            cursor: pointer;
+            transition: border-color 0.3s ease, background-color 0.3s ease;
+        }
+
+        .file-drag-area.highlight {
+            border-color: var(--primary-color);
+            background-color: #e8f5e9;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin-top: 10px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 10px;
+        }
+
+        li {
+            background-color: #f9f9f9;
+            border: 1px solid #eee;
+            padding: 8px 12px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9em;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-top: 20px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            width: auto;
+            display: inline-block;
+        }
+
+        button:hover:not(:disabled) {
+            background-color: #45a049;
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .progress-section {
+            margin-top: 15px;
+            display: none;
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .progress-bar-container {
+            background-color: #e0e0e0;
+            border-radius: 3px;
+            height: 20px;
+            overflow: hidden;
+            margin-top: 5px;
+            position: relative;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--secondary-color);
+            width: 0%;
+            transition: width 0.3s ease-in-out;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .progress-bar-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            line-height: 20px;
+            color: #333;
+            font-size: 0.85em;
+            font-weight: 600;
+            z-index: 1;
+        }
+
+        footer {
+            margin-top: 40px;
+            padding: 20px;
+            text-align: center;
+            color: #777;
+            font-size: 0.9em;
+            background-color: var(--card-background);
+            border-top: 1px solid var(--border-color);
+            box-shadow: 0 -2px 4px var(--shadow-light);
+        }
+
+        @media (max-width: 768px) {
+            nav {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            nav a {
+                text-align: center;
+                margin: 5px 0;
+            }
+
+            .container {
+                margin: 10px auto;
+                padding: 0 15px;
+            }
+
+            header h1 {
+                font-size: 2em;
+            }
+
+            section {
+                padding: 15px;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
     </style>
-    <script src="ffmpeg/index.js"></script>
-    <script src="ffmpeg/ffmpeg.min.js"></script>
+    <script src="converter.js"></script>
 </head>
 <body>
-    <h1>🎬 Video Converter - Tüm Araçlar</h1>
-    <p>MP4→MP3 / MP3→MP4 / MOV→MP4 / Reverse Video / Mirror Flip / Audio Extract - Tamamen tarayıcınızda çalışır</p>
-    
-    <div id="ffmpeg-status" class="status-message">FFmpeg yükleniyor...</div>
-    <div id="ffmpeg-progress-container">
-        <div id="ffmpeg-progress-fill"></div>
-        <div id="ffmpeg-progress-text"></div>
+    <header>
+        <div class="container">
+            <h1>🎬 Video Dönüştürücü - Tüm Araçlar</h1>
+            <p>MP4→MP3 / MP3→MP4 / MOV→MP4 / Videoyu Ters Çevir / Videoyu Aynala / Ses Çıkar - Tamamen tarayıcınızda çalışır</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="ffmpeg-status" class="status-message info">FFmpeg yükleniyor...</div>
+        <div id="ffmpeg-progress-container">
+            <div id="ffmpeg-progress-fill"></div>
+            <div id="ffmpeg-progress-text"></div>
+        </div>
+        <div id="globalStatus" class="status-message hidden"></div>
+
+        <nav>
+            <a href="#mp4-to-mp3" class="tab-link active" data-tab="mp4-to-mp3">MP4 → MP3</a>
+            <a href="#mp3-to-mp4" class="tab-link" data-tab="mp3-to-mp4">MP3 → MP4</a>
+            <a href="#mov-to-mp4" class="tab-link" data-tab="mov-to-mp4">MOV → MP4</a>
+            <a href="#video-reverse" class="tab-link" data-tab="video-reverse">Video Ters Çevir</a>
+            <a href="#video-mirror" class="tab-link" data-tab="video-mirror">Video Aynala</a>
+            <a href="#mp3-to-mp4-image" class="tab-link" data-tab="mp3-to-mp4-image">MP3 → MP4 (Resimli)</a>
+        </nav>
+
+        <section id="mp4-to-mp3" class="active">
+            <h2>MP4 → MP3 Dönüştürücü</h2>
+            <p>MP4 videolarınızdan sesi çıkarır ve MP3 formatına dönüştürür.</p>
+            <label for="mp4tomp3Input">Dönüştürülecek MP4 Dosyalarını Seçin:</label>
+            <input type="file" id="mp4tomp3Input" accept=".mp4" multiple data-filelist="mp4tomp3Files">
+            <div class="file-drag-area" id="mp4tomp3DragArea">
+                🎥 MP4 dosyalarını buraya sürükleyin veya seçmek için tıklayın
+            </div>
+            <strong>Seçilen Dosyalar:</strong>
+            <ul id="mp4tomp3Files"></ul>
+            <button id="mp4tomp3Btn" disabled>MP3'e Dönüştür</button>
+            <div id="mp4tomp3Progress" class="progress-section">
+                <div class="progress-bar-container">
+                    <div id="mp4tomp3ProgressFill" class="progress-bar-fill"></div>
+                    <div id="mp4tomp3ProgressText" class="progress-bar-text"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="mp3-to-mp4">
+            <h2>MP3 → MP4 Dönüştürücü</h2>
+            <p>MP3 dosyalarını kapak resimli MP4 videolara dönüştürür.</p>
+            <label for="mp3tomp4AudioInput">MP3 Dosyalarını Seçin:</label>
+            <input type="file" id="mp3tomp4AudioInput" accept=".mp3" multiple data-filelist="mp3tomp4AudioFiles">
+            <div class="file-drag-area" id="mp3tomp4AudioDragArea">
+                🎵 MP3 dosyalarını buraya sürükleyin veya seçmek için tıklayın
+            </div>
+            <label for="mp3tomp4ImageInput">Kapak Resmi Seçin (Opsiyonel):</label>
+            <input type="file" id="mp3tomp4ImageInput" accept=".jpg,.jpeg,.png" data-filelist="mp3tomp4ImageFiles">
+            <div class="file-drag-area" id="mp3tomp4ImageDragArea">
+                🖼️ Resim dosyasını buraya sürükleyin veya seçmek için tıklayın (JPEG/PNG)
+            </div>
+            <strong>Seçilen MP3 Dosyalar:</strong>
+            <ul id="mp3tomp4AudioFiles"></ul>
+            <strong>Seçilen Resim Dosyası:</strong>
+            <ul id="mp3tomp4ImageFiles"></ul>
+            <button id="mp3tomp4Btn" disabled>MP4'e Dönüştür</button>
+            <div id="mp3tomp4Progress" class="progress-section">
+                <div class="progress-bar-container">
+                    <div id="mp3tomp4ProgressFill" class="progress-bar-fill"></div>
+                    <div id="mp3tomp4ProgressText" class="progress-bar-text"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="mov-to-mp4">
+            <h2>MOV → MP4 Dönüştürücü</h2>
+            <p>MOV dosyalarını MP4 formatına dönüştürür.</p>
+            <label for="movtomp4Input">Dönüştürülecek MOV Dosyalarını Seçin:</label>
+            <input type="file" id="movtomp4Input" accept=".mov" multiple data-filelist="movtomp4Files">
+            <div class="file-drag-area" id="movtomp4DragArea">
+                🎬 MOV dosyalarını buraya sürükleyin veya seçmek için tıklayın
+            </div>
+            <strong>Seçilen Dosyalar:</strong>
+            <ul id="movtomp4Files"></ul>
+            <button id="movtomp4Btn" disabled>MP4'e Dönüştür</button>
+            <div id="movtomp4Progress" class="progress-section">
+                <div class="progress-bar-container">
+                    <div id="movtomp4ProgressFill" class="progress-bar-fill"></div>
+                    <div id="movtomp4ProgressText" class="progress-bar-text"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="video-reverse">
+            <h2>Video Ters Çevirici</h2>
+            <p>Videoları ve seslerini tersine çevirir, dosya adını da tersine çevirir.</p>
+            <label for="invertmp4Input">Ters Çevrilecek Video Dosyalarını Seçin:</label>
+            <input type="file" id="invertmp4Input" accept=".mp4,.mov" multiple data-filelist="invertmp4Files">
+            <div class="file-drag-area" id="invertmp4DragArea">
+                ⏪ Video dosyalarını buraya sürükleyin veya seçmek için tıklayın
+            </div>
+            <strong>Seçilen Dosyalar:</strong>
+            <ul id="invertmp4Files"></ul>
+            <button id="invertmp4Btn" disabled>Ters Çevir</button>
+            <div id="invertmp4Progress" class="progress-section">
+                <div class="progress-bar-container">
+                    <div id="invertmp4ProgressFill" class="progress-bar-fill"></div>
+                    <div id="invertmp4ProgressText" class="progress-bar-text"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="video-mirror">
+            <h2>Video Aynalama</h2>
+            <p>Video görüntüsüne yatay olarak ayna efekti uygular.</p>
+            <label for="flipmp4Input">Aynalanacak Video Dosyalarını Seçin:</label>
+            <input type="file" id="flipmp4Input" accept=".mp4,.mov" multiple data-filelist="flipmp4Files">
+            <div class="file-drag-area" id="flipmp4DragArea">
+                🪞 Video dosyalarını buraya sürükleyin veya seçmek için tıklayın
+            </div>
+            <strong>Seçilen Dosyalar:</strong>
+            <ul id="flipmp4Files"></ul>
+            <button id="flipmp4Btn" disabled>Ayna Efekti Uygula</button>
+            <div id="flipmp4Progress" class="progress-section">
+                <div class="progress-bar-container">
+                    <div id="flipmp4ProgressFill" class="progress-bar-fill"></div>
+                    <div id="flipmp4ProgressText" class="progress-bar-text"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="mp3-to-mp4-image">
+            <h2>MP3 → MP4 Dönüştürücü (Resimli)</h2>
+            <p>MP3'leri sabit bir resim arka planıyla MP4 videolara dönüştürür.</p>
+            <label for="mp3tomp4jAudioInput">MP3 Dosyalarını Seçin:</label>
+            <input type="file" id="mp3tomp4jAudioInput" accept=".mp3" multiple data-filelist="mp3tomp4jAudioFiles">
+            <div class="file-drag-area" id="mp3tomp4jAudioDragArea">
+                🎵 MP3 dosyalarını buraya sürükleyin veya seçmek için tıklayın
+            </div>
+            <label for="mp3tomp4jImageInput">Arka Plan Resmi Seçin:</label>
+            <input type="file" id="mp3tomp4jImageInput" accept=".jpg,.jpeg,.png" data-filelist="mp3tomp4jImageFiles">
+            <div class="file-drag-area" id="mp3tomp4jImageDragArea">
+                🖼️ Resim dosyasını buraya sürükleyin veya seçmek için tıklayın (JPEG/PNG)
+            </div>
+            <strong>Seçilen MP3 Dosyalar:</strong>
+            <ul id="mp3tomp4jAudioFiles"></ul>
+            <strong>Seçilen Arka Plan Resmi:</strong>
+            <ul id="mp3tomp4jImageFiles"></ul>
+            <button id="mp3tomp4jBtn" disabled>MP4'e Dönüştür</button>
+            <div id="mp3tomp4jProgress" class="progress-section">
+                <div class="progress-bar-container">
+                    <div id="mp3tomp4jProgressFill" class="progress-bar-fill"></div>
+                    <div id="mp3tomp4jProgressText" class="progress-bar-text"></div>
+                </div>
+            </div>
+        </section>
     </div>
-    <div id="globalStatus" class="status-message" style="display: none;"></div>
-
-    <nav>
-        <a href="#mp4-to-mp3" class="tab-link active" data-tab="mp4-to-mp3">MP4 → MP3</a> |
-        <a href="#mp3-to-mp4" class="tab-link" data-tab="mp3-to-mp4">MP3 → MP4</a> |
-        <a href="#mov-to-mp4" class="tab-link" data-tab="mov-to-mp4">MOV → MP4</a> |
-        <a href="#video-reverse" class="tab-link" data-tab="video-reverse">Video Reverse</a> |
-        <a href="#video-mirror" class="tab-link" data-tab="video-mirror">Video Mirror</a> |
-        <a href="#mp3-to-mp4-image" class="tab-link" data-tab="mp3-to-mp4-image">MP3 → MP4 (Resimli)</a>
-    </nav>
-
-    <section id="mp4-to-mp3" class="active">
-        <h2>MP4 → MP3</h2>
-        <p>MP4 videolardan ses çıkararak MP3 formatına dönüştürür</p>
-        <label>Dosya Seçin:</label>
-        <input type="file" id="mp4tomp3Input" accept=".mp4" multiple>
-        <p>🎥 MP4 dosyasını buraya sürükleyin veya tıklayın</p>
-        <strong>Seçilen Dosyalar:</strong>
-        <ul id="mp4tomp3Files"></ul>
-        <button id="mp4tomp3Btn" disabled>MP3'e Dönüştür</button>
-        <div id="mp4tomp3Progress" class="status-message" style="display: none;">İşleniyor...</div>
-        <div id="mp4tomp3ProgressFill" style="height: 20px; background: #4CAF50; width: 0%;"></div>
-        <div id="mp4tomp3ProgressText"></div>
-    </section>
-
-    <section id="mp3-to-mp4">
-        <h2>MP3 → MP4</h2>
-        <p>MP3 dosyalarını kapak resimli MP4 videolara dönüştürür</p>
-        <label>MP3 Dosyası:</label>
-        <input type="file" id="mp3tomp4AudioInput" accept=".mp3" multiple>
-        <p>🎵 MP3 dosyasını seçin</p>
-        <label>Kapak Resmi (opsiyonel):</label>
-        <input type="file" id="mp3tomp4ImageInput" accept=".jpg,.jpeg,.png">
-        <p>🖼️ Resim dosyasını seçin (JPEG/PNG)</p>
-        <strong>Seçilen MP3 Dosyalar:</strong>
-        <ul id="mp3tomp4Files"></ul>
-        <button id="mp3tomp4Btn" disabled>MP4'e Dönüştür</button>
-        <div id="mp3tomp4Progress" class="status-message" style="display: none;">İşleniyor...</div>
-        <div id="mp3tomp4ProgressFill" style="height: 20px; background: #4CAF50; width: 0%;"></div>
-        <div id="mp3tomp4ProgressText"></div>
-    </section>
-
-    <section id="mov-to-mp4">
-        <h2>MOV → MP4</h2>
-        <p>MOV dosyalarını MP4 formatına dönüştürür</p>
-        <label>Dosya Seçin:</label>
-        <input type="file" id="movtomp4Input" accept=".mov" multiple>
-        <p>🎬 MOV dosyasını buraya sürükleyin veya tıklayın</p>
-        <strong>Seçilen Dosyalar:</strong>
-        <ul id="movtomp4Files"></ul>
-        <button id="movtomp4Btn" disabled>MP4'e Dönüştür</button>
-        <div id="movtomp4Progress" class="status-message" style="display: none;">İşleniyor...</div>
-        <div id="movtomp4ProgressFill" style="height: 20px; background: #4CAF50; width: 0%;"></div>
-        <div id="movtomp4ProgressText"></div>
-    </section>
-
-    <section id="video-reverse">
-        <h2>Video Reverse</h2>
-        <p>Videoları ve sesi ters çevirir, dosya adını da tersine çevirir</p>
-        <label>Dosya Seçin:</label>
-        <input type="file" id="invertmp4Input" accept=".mp4,.mov" multiple>
-        <p>⏪ Video dosyasını buraya sürükleyin veya tıklayın</p>
-        <strong>Seçilen Dosyalar:</strong>
-        <ul id="invertmp4Files"></ul>
-        <button id="invertmp4Btn" disabled>Ters Çevir</button>
-        <div id="invertmp4Progress" class="status-message" style="display: none;">İşleniyor...</div>
-        <div id="invertmp4ProgressFill" style="height: 20px; background: #4CAF50; width: 0%;"></div>
-        <div id="invertmp4ProgressText"></div>
-    </section>
-
-    <section id="video-mirror">
-        <h2>Video Mirror</h2>
-        <p>Video görüntüsünü yatay olarak ayna efekti uygular</p>
-        <label>Dosya Seçin:</label>
-        <input type="file" id="flipmp4Input" accept=".mp4,.mov" multiple>
-        <p>🪞 Video dosyasını buraya sürükleyin veya tıklayın</p>
-        <strong>Seçilen Dosyalar:</strong>
-        <ul id="flipmp4Files"></ul>
-        <button id="flipmp4Btn" disabled>Ayna Efekti Uygula</button>
-        <div id="flipmp4Progress" class="status-message" style="display: none;">İşleniyor...</div>
-        <div id="flipmp4ProgressFill" style="height: 20px; background: #4CAF50; width: 0%;"></div>
-        <div id="flipmp4ProgressText"></div>
-    </section>
-
-    <section id="mp3-to-mp4-image">
-        <h2>MP3 → MP4 (Resimli)</h2>
-        <p>MP3'leri sabit resim arka planlı MP4'lere dönüştürür</p>
-        <label>MP3 Dosyası:</label>
-        <input type="file" id="mp3tomp4jAudioInput" accept=".mp3" multiple>
-        <p>🎵 MP3 dosyasını seçin</p>
-        <label>Arka Plan Resmi:</label>
-        <input type="file" id="mp3tomp4jImageInput" accept=".jpg,.jpeg,.png">
-        <p>🖼️ Resim dosyasını seçin (JPEG/PNG)</p>
-        <strong>Seçilen MP3 Dosyalar:</strong>
-        <ul id="mp3tomp4jFiles"></ul>
-        <button id="mp3tomp4jBtn" disabled>MP4'e Dönüştür</button>
-        <div id="mp3tomp4jProgress" class="status-message" style="display: none;">İşleniyor...</div>
-        <div id="mp3tomp4jProgressFill" style="height: 20px; background: #4CAF50; width: 0%;"></div>
-        <div id="mp3tomp4jProgressText"></div>
-    </section>
 
     <footer>
-        © 2025 Video Converter - Tamamen tarayıcınızda çalışır. Hiçbir sunucuya veri gönderilmez.
-        <br>FFmpeg.js kullanılarak geliştirilmiştir
+        © 2025 Video Dönüştürücü - Tamamen tarayıcınızda çalışır. Hiçbir sunucuya veri gönderilmez.
+        <br>FFmpeg.js kullanılarak geliştirilmiştir.
     </footer>
 
     <script src="converter.js"></script>
