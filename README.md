@@ -343,3 +343,12 @@ chmod +x bash/*.sh
 
 **🇹🇷 Türkçe**: Script'leri kullanmaya başlamak için FFmpeg'in kurulu olduğundan emin olun ve istediğiniz script'i çalıştırın!  
 **🇬🇧 English**: Make sure FFmpeg is installed and run your desired script to get started!
+
+## ☕ Destek Olun / Support
+
+Projemi beğendiyseniz, bana bir kahve ısmarlayarak destek olabilirsiniz!
+
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://buymeacoffee.com/metatronslove)
+
+Teşekkürler! 🙏
+
